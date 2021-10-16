@@ -9,8 +9,14 @@ def put_primitive(vector_index_overwritevalue):
     vector[index.long()] = overwritevalue
     return vector
 
+def return_idx_primitive(vector,idx):
+    return vector[0][idx]
+
 def first_primitive(vector):
-    return vector[0][0]
+    return return_idx_primitive(vector,idx=0)
+
+def last_primitive(vector):
+    return return_idx_primitive(vector,idx=-1)
 
 primitives_d = {
     '/': lambda x: torch.divide(x[0], x[1]),
@@ -22,4 +28,5 @@ primitives_d = {
     'get' : get_primitive,
     'put' : put_primitive,
     'first' : first_primitive,
+    'last' : last_primitive,
 }
