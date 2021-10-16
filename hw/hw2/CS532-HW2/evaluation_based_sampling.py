@@ -24,7 +24,7 @@ def evaluate(e):
         if type(e) == list:
             e = e[0]
         if isinstance(e, number):
-            return torch.tensor(float(e))
+            return torch.tensor([float(e)])
         elif e in list(primitives_d.keys()):
             return e
         elif torch.is_tensor(e):
@@ -47,7 +47,7 @@ def get_stream(ast):
 
 def run_deterministic_tests():
     
-    for i in range(9,11):
+    for i in range(11,12):
         #note: this path should be with respect to the daphne path!
         os.chdir('/Users/gw/repos/prob_prog/hw/hw2/CS532-HW2/')
         ast = daphne(['desugar', '-i', '../prob_prog/hw/hw2/CS532-HW2/programs/tests/deterministic/test_{}.daphne'.format(i)])

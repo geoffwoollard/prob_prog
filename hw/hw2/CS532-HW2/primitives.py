@@ -18,15 +18,16 @@ def first_primitive(vector):
 def last_primitive(vector):
     return return_idx_primitive(vector,idx=-1)
 
-primitives_d = {
-    '/': lambda x: torch.divide(x[0], x[1]),
-    '*': lambda x: torch.multiply(x[0], x[1]),
+primitives_d = {    
     '+': lambda x: torch.add(x[0], x[1]),
     '-': lambda x: torch.subtract(x[0],x[1]),
+    '*': lambda x: torch.multiply(x[0], x[1]),
+    '/': lambda x: torch.divide(x[0], x[1]),
     'sqrt': lambda x: torch.sqrt(x[0]),
     'vector': torch.tensor,
     'get' : get_primitive,
     'put' : put_primitive,
     'first' : first_primitive,
     'last' : last_primitive,
+    'append' : torch.cat,
 }
