@@ -2,16 +2,7 @@ import os
 from daphne import daphne
 from tests import is_tol, run_prob_test,load_truth
 import torch
-
-
-primitives = {
-    '/': lambda x: torch.divide(x[0], x[1]),
-    '*': lambda x: torch.multiply(x[0], x[1]),
-    '+': lambda x: torch.add(x[0], x[1]),
-    '-': lambda x: torch.subtract(x[0],x[1]),
-    'sqrt': lambda x: torch.sqrt(x[0]),
-    'vector': torch.tensor,
-}
+from primitives import primitives_d
 
 number = (int,float)
         
@@ -34,7 +25,7 @@ def evaluate(e):
             e = e[0]
         if isinstance(e, number):
             return torch.tensor(float(e))
-        elif e in list(primitives.keys()):
+        elif e in list(primitives_d.keys()):
             return e
         elif torch.is_tensor(e):
             return e
@@ -43,8 +34,8 @@ def evaluate(e):
         for ei in e:
             c = evaluate(ei)
             cs.append(c)
-        if cs[0] in primitives:
-            return primitives[cs[0]](cs[1:]) # primitives is a function that takes arguments
+        if cs[0] in primitives_d:
+            return primitives_d[cs[0]](cs[1:]) # primitives is a function that takes arguments
 
 
 
@@ -56,7 +47,7 @@ def get_stream(ast):
 
 def run_deterministic_tests():
     
-    for i in range(6,7):
+    for i in range(7,8):
         #note: this path should be with respect to the daphne path!
         os.chdir('/Users/gw/repos/prob_prog/hw/hw2/CS532-HW2/')
         ast = daphne(['desugar', '-i', '../prob_prog/hw/hw2/CS532-HW2/programs/tests/deterministic/test_{}.daphne'.format(i)])
