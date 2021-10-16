@@ -1,50 +1,50 @@
+import os
 from daphne import daphne
 from tests import is_tol, run_prob_test,load_truth
 import torch
 
-two_arg_primitives = {
-    '+':torch.add,
-    '-':torch.subtract,
-    '*':torch.multiply,
-    '/':torch.divide
-    }
-    
-one_arg_primitives = {
-    'sqrt':torch.sqrt
+
+primitives = {
+    '+': lambda x: x[0] + x[1],
+    '-': lambda x: x[0] - x[1],
+    '*': lambda x: x[0] * x[1],
+    '/': lambda x: x[0] / x[1],
+    'sqrt': lambda x: torch.sqrt(x[0]),
 }
+
+number = (int,float)
         
-def evaluate_program(ast):
+
+def evaluate_program(ast,sig=None):
     """Evaluate a program as desugared by daphne, generate a sample from the prior
     Args:
         ast: json FOPPL program
     Returns: sample from the prior of ast
     """
-
-    # constants
-
-    s,l = {},{}
-    c = one_arg_primitives.keys() + two_arg_primitives.keys()
-    e = ast[0]
-
-    if e[0] in c:
-        E,s = base_case(e,s,l)
-        return E,s
-
-    return None
+    ast0 = ast[0]
+    res = eval(ast0)
+    return res,sig
 
 
-def make_tensor(v):
-    return torch.tensor(v)
+def eval(e):
+   # print(e)
+    if type(e) != list or len(e) == 1:
+        if type(e) == list:
+            e = e[0]
+        if isinstance(e, number):
+            return torch.tensor(float(e))
+        elif e in list(primitives.keys()):
+            return e
+        elif torch.is_tensor(e):
+            return e
+    else:
+        cs = []
+        for ei in e:
+            c = eval(ei)
+            cs.append(c)
+        if cs[0] in primitives:
+            return primitives[cs[0]](cs[1:]) # primitives is a function that takes arguments
 
-
-def base_case(e,s,l):
-    if e[0] in two_arg_primitives.keys():
-        e0,arg1,arg2 = e
-        E = two_arg_primitives[e0](make_tensor(arg1),make_tensor(arg2))
-    elif e[0] in one_arg_primitives.keys():
-        e0,arg1 = e
-        E = one_arg_primitives[e0](make_tensor(arg1))
-    return E,s
 
 
 def get_stream(ast):
@@ -55,10 +55,11 @@ def get_stream(ast):
 
 def run_deterministic_tests():
     
-    for i in range(1,14):
+    for i in range(1,5):
         #note: this path should be with respect to the daphne path!
+        os.chdir('/Users/gw/repos/prob_prog/hw/hw2/CS532-HW2/')
         ast = daphne(['desugar', '-i', '../prob_prog/hw/hw2/CS532-HW2/programs/tests/deterministic/test_{}.daphne'.format(i)])
-        truth = load_truth('../prob_prog/hw/hw2/CS532-HW2/programs/tests/deterministic/test_{}.truth'.format(i))
+        truth = load_truth('programs/tests/deterministic/test_{}.truth'.format(i))
         ret, sig = evaluate_program(ast)
         try:
             assert(is_tol(ret, truth))
