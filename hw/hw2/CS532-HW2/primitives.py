@@ -9,6 +9,9 @@ def put_primitive(vector_index_overwritevalue):
     vector[index.long()] = overwritevalue
     return vector
 
+def first_primitive(vector):
+    return vector[0][0]
+
 primitives_d = {
     '/': lambda x: torch.divide(x[0], x[1]),
     '*': lambda x: torch.multiply(x[0], x[1]),
@@ -18,4 +21,5 @@ primitives_d = {
     'vector': torch.tensor,
     'get' : get_primitive,
     'put' : put_primitive,
+    'first' : first_primitive,
 }
