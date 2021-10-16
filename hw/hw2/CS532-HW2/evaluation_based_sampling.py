@@ -5,10 +5,10 @@ import torch
 
 
 primitives = {
-    '+': lambda x: x[0] + x[1],
-    '-': lambda x: x[0] - x[1],
-    '*': lambda x: x[0] * x[1],
-    '/': lambda x: x[0] / x[1],
+    '/': lambda x: torch.divide(x[0], x[1]),
+    '*': lambda x: torch.multiply(x[0], x[1]),
+    '+': lambda x: torch.add(x[0], x[1]),
+    '-': lambda x: torch.subtract(x[0],x[1]),
     'sqrt': lambda x: torch.sqrt(x[0]),
 }
 
@@ -22,11 +22,11 @@ def evaluate_program(ast,sig=None):
     Returns: sample from the prior of ast
     """
     ast0 = ast[0]
-    res = eval(ast0)
+    res = evaluate(ast0)
     return res,sig
 
 
-def eval(e):
+def evaluate(e):
    # print(e)
     if type(e) != list or len(e) == 1:
         if type(e) == list:
@@ -40,7 +40,7 @@ def eval(e):
     else:
         cs = []
         for ei in e:
-            c = eval(ei)
+            c = evaluate(ei)
             cs.append(c)
         if cs[0] in primitives:
             return primitives[cs[0]](cs[1:]) # primitives is a function that takes arguments
