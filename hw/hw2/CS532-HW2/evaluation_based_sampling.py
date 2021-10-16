@@ -47,7 +47,7 @@ def get_stream(ast):
 
 def run_deterministic_tests():
     
-    for i in range(7,8):
+    for i in range(8,9):
         #note: this path should be with respect to the daphne path!
         os.chdir('/Users/gw/repos/prob_prog/hw/hw2/CS532-HW2/')
         ast = daphne(['desugar', '-i', '../prob_prog/hw/hw2/CS532-HW2/programs/tests/deterministic/test_{}.daphne'.format(i)])
