@@ -10,9 +10,13 @@ def get_primitive(vector_and_index):
         assert False,  'vector type {} case not implemented'.format(type(vector))
 
 def put_primitive(vector_index_overwritevalue):
-	# TODO make work on hash-map
     vector, index, overwritevalue = vector_index_overwritevalue
-    vector[index.long()] = overwritevalue
+    if isinstance(vector,dict):
+        vector[index.item()] = overwritevalue
+    elif torch.is_tensor(vector):
+        vector[index.long()] = overwritevalue
+    else:
+        assert False,  'vector type {} case not implemented'.format(type(vector))
     return vector
 
 def return_idx_primitive(vector,idx):
