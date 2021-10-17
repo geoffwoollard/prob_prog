@@ -18,11 +18,13 @@ def evaluate_program(ast,sig=None):
     return res, sig
 
 
-def evaluate(e):
-    if len(e) == 1 or not isinstance(e,list):
+number = (int,float)
+def evaluate(e,local_env={}):
+    # everytime we call evaluate, we have to use local_env, otherwise it gets overwritten with the default {}
+    if not isinstance(e,list) or len(e) == 1:
         if isinstance(e,list):
             e = e[0]
-            
+
         if isinstance(e, number):
             return torch.tensor([float(e)])
         elif e in list(primitives_d.keys()):
@@ -31,16 +33,29 @@ def evaluate(e):
             return e
         elif torch.is_tensor(e):
             return e
+        elif e in local_env.keys():
+            return local_env[e]
         else:
             assert False
     elif e[0] == 'sample':
-        dist = evaluate(e[1])
-        return dist.sample()
+        distribution = evaluate(e[1],local_env)
+        return distribution.sample()
+    elif e[0] == 'let': 
+        # let [v1 e1] e0
+        # here 
+            # e[0] : "let"
+            # e[1] : [v1, e1]
+            # e[2] : e0
+        # evaluates e1 to c1 and binds this value to e0
+        # this means we update the context with old context plus {v1:c1}
+        c1 = evaluate(e[1][1],local_env) # evaluates e1 to c1
+        v1 = e[1][0]
+        return evaluate(e[2], local_env = {**local_env,v1:c1})
         
     else:
         cs = []
         for ei in e:
-            c = evaluate(ei)
+            c = evaluate(ei,local_env)
             cs.append(c)
         if cs[0] in primitives_d:
             return primitives_d[cs[0]](cs[1:])
@@ -48,8 +63,6 @@ def evaluate(e):
             return distributions_d[cs[0]](cs[1:])
         else:
             assert False
-
-
 
 def get_stream(ast):
     """Return a stream of prior samples"""
@@ -81,7 +94,7 @@ def run_probabilistic_tests():
     num_samples=1e4
     max_p_value = 1e-4
     
-    for i in range(1,3+1):
+    for i in range(4,4+1):
         #note: this path should be with respect to the daphne path!        
         ast = daphne(['desugar', '-i', '../prob_prog/hw/hw2/CS532-HW2/programs/tests/probabilistic/test_{}.daphne'.format(i)])
         truth = load_truth('programs/tests/probabilistic/test_{}.truth'.format(i))
