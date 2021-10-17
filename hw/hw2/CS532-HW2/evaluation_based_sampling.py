@@ -19,9 +19,10 @@ def evaluate_program(ast,sig=None):
 
 
 def evaluate(e):
-    if type(e) != list or len(e) == 1:
-        if type(e) == list:
+    if len(e) == 1 or not isinstance(e,list):
+        if isinstance(e,list):
             e = e[0]
+            
         if isinstance(e, number):
             return torch.tensor([float(e)])
         elif e in list(primitives_d.keys()):
