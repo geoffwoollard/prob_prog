@@ -20,6 +20,7 @@ def evaluate_program(ast,sig=None):
 
 number = (int,float)
 def evaluate(e,local_env={}):
+    # remember to return evaluate (recursive)
     # everytime we call evaluate, we have to use local_env, otherwise it gets overwritten with the default {}
     if not isinstance(e,list) or len(e) == 1:
         if isinstance(e,list):
@@ -51,7 +52,14 @@ def evaluate(e,local_env={}):
         c1 = evaluate(e[1][1],local_env) # evaluates e1 to c1
         v1 = e[1][0]
         return evaluate(e[2], local_env = {**local_env,v1:c1})
-        
+    elif e[0] == 'if': # if e0 e1 e2
+        e0 = e[1]
+        e1 = e[2]
+        e2 = e[3]
+        if evaluate(e0,local_env):
+            return evaluate(e1,local_env)
+        else:
+            return evaluate(e2,local_env) 
     else:
         cs = []
         for ei in e:
@@ -94,7 +102,7 @@ def run_probabilistic_tests():
     num_samples=1e4
     max_p_value = 1e-4
     
-    for i in range(4,4+1):
+    for i in range(5,5+1):
         #note: this path should be with respect to the daphne path!        
         ast = daphne(['desugar', '-i', '../prob_prog/hw/hw2/CS532-HW2/programs/tests/probabilistic/test_{}.daphne'.format(i)])
         truth = load_truth('programs/tests/probabilistic/test_{}.truth'.format(i))

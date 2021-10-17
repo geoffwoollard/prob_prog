@@ -72,6 +72,25 @@ def hash_map_primitive(hash_pairs):
     return dict(zip(keys, vals))
 
 
+def gt_primitive(consequent_alternative):
+    return two_arg_op_primitive(torch.gt,consequent_alternative)
+
+
+def lt_primitive(consequent_alternative):
+    return two_arg_op_primitive(torch.lt,consequent_alternative)
+
+
+def ge_primitive(consequent_alternative):
+    return two_arg_op_primitive(torch.ge,consequent_alternative)
+
+
+def le_primitive(consequent_alternative):
+    return two_arg_op_primitive(torch.le,consequent_alternative)
+
+
+def eq_primitive(consequent_alternative):
+    return two_arg_op_primitive(torch.eq,consequent_alternative)
+
 # NB: these functions take a list [c0] or [c0, c1, ..., cn]
 # rely on user to not write something non-sensitcal that will fail (e.g. ["+",1,2,3])
 primitives_d = {
@@ -87,6 +106,11 @@ primitives_d = {
     'last' : last_primitive,
     'append' : torch.cat,
     'hash-map' : hash_map_primitive,
+    '>':gt_primitive,
+    '<':lt_primitive,
+    '>=':ge_primitive,
+    '<=':le_primitive,
+    '==':eq_primitive,
 }
 
 
@@ -102,8 +126,13 @@ def exponential(lam):
     return one_arg_op_primitive(torch.distributions.Exponential,lam)
 
 
+def uniform(low_hi):
+    return two_arg_op_primitive(torch.distributions.Uniform,low_hi)
+
+
 distributions_d = {
     'normal': normal,
     'beta': beta,
     'exponential': exponential,
+    'uniform': uniform,
 }
