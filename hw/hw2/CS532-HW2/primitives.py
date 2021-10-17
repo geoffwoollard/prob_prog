@@ -35,11 +35,32 @@ def hash_map_primitive(hash_pairs):
     vals = hash_pairs[1::2]
     return dict(zip(keys, vals))
 
-primitives_d = {    
-    '+': lambda x: torch.add(x[0], x[1]),
-    '-': lambda x: torch.subtract(x[0],x[1]),
-    '*': lambda x: torch.multiply(x[0], x[1]),
-    '/': lambda x: torch.divide(x[0], x[1]),
+
+def two_arg_op_primitive(op,arg1_arg2):
+    arg1, arg2 = arg1_arg2
+    return op(arg1, arg2)
+
+
+def add_primitive(arg1_arg2):
+    return two_arg_op_primitive(torch.add,arg1_arg2)
+
+
+def subtract_primitive(arg1_arg2):
+    return two_arg_op_primitive(torch.subtract,arg1_arg2)
+
+
+def multiply_primitive(arg1_arg2):
+    return two_arg_op_primitive(torch.multiply,arg1_arg2)
+
+
+def divide_primitive(arg1_arg2):
+    return two_arg_op_primitive(torch.divide,arg1_arg2)
+    
+primitives_d = {
+    '+': add_primitive,
+    '-': subtract_primitive,
+    '/': divide_primitive,
+    '*': multiply_primitive,
     'sqrt': lambda x: torch.sqrt(x[0]),
     'vector': torch.tensor,
     'get' : get_primitive,
@@ -48,4 +69,13 @@ primitives_d = {
     'last' : last_primitive,
     'append' : torch.cat,
     'hash-map' : hash_map_primitive,
+}
+
+
+def normal(mean_std):
+    mean, std = mean_std
+    return torch.distributions.Normal(mean,std)
+
+distributions_d = {
+    'normal': normal,
 }
