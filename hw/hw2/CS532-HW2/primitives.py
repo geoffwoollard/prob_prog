@@ -136,3 +136,10 @@ distributions_d = {
     'exponential': exponential,
     'uniform': uniform,
 }
+
+class Function:
+
+    def __init__(self, name, variables, proc):
+        self.name = name
+        self.variables = variables
+        self.proc = proc
