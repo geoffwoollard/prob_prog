@@ -40,31 +40,41 @@ def evaluate_program(ast,sig=None):
 
 
 number = (int,float)
-def evaluate(e,local_env={},defn_d={}):
+def evaluate(e,local_env={},defn_d={},do_log=False):
     # remember to return evaluate (recursive)
     # everytime we call evaluate, we have to use local_env, otherwise it gets overwritten with the default {}
+    
+    # get first expression out of list or list of one
     if not isinstance(e,list) or len(e) == 1:
         if isinstance(e,list):
             e = e[0]
 
         if isinstance(e, number):
+            if do_log: logger.info('match case: number {}'.format(e))
             return torch.tensor([float(e)])
         elif e in list(primitives_d.keys()):
+            if do_log: logger.info('match case: primitives_d {}'.format(e))
             return e
         elif e in list(distributions_d.keys()):
+            if do_log: logger.info('match case: distributions_d {}'.format(e))
             return e
         elif torch.is_tensor(e):
+            if do_log: logger.info('match case: is_tensor {}'.format(e))
             return e
         elif e in local_env.keys():
+            if do_log: logger.info('match case: local_env {}'.format(e))
             return local_env[e]
         elif e in list(defn_d.keys()):
+            if do_log: logger.info('match case: defn_d {}'.format(e))
             return e
         else:
             assert False
     elif e[0] == 'sample':
+        if do_log: logger.info('match case: sample {}'.format(e))
         distribution = evaluate(e[1],local_env,defn_d)
         return distribution.sample()
     elif e[0] == 'let': 
+        if do_log: logger.info('match case: let {}'.format(e))
         # let [v1 e1] e0
         # here 
             # e[0] : "let"
@@ -76,6 +86,7 @@ def evaluate(e,local_env={},defn_d={}):
         v1 = e[1][0]
         return evaluate(e[2], local_env = {**local_env,v1:c1},defn_d=defn_d)
     elif e[0] == 'if': # if e0 e1 e2
+        if do_log: logger.info('match case: if {}'.format(e))
         e0 = e[1]
         e1 = e[2]
         e2 = e[3]
@@ -87,16 +98,21 @@ def evaluate(e,local_env={},defn_d={}):
     else:
         cs = []
         for ei in e:
+            if do_log: logger.info('cycling through expressions. ei {}'.format(ei))
             c = evaluate(ei,local_env,defn_d)
             cs.append(c)
         if cs[0] in primitives_d:
+            if do_log: logger.info('do case primitives_d: cs0 {}'.format(cs[0]))
             return primitives_d[cs[0]](cs[1:])
         elif cs[0] in distributions_d:
+            if do_log: logger.info('do case distributions_d: cs0 {}'.format(cs[0]))
             return distributions_d[cs[0]](cs[1:])
         elif cs[0] in defn_d:
+            if do_log: logger.info('do case defn: cs0  {}'.format(cs[0]))
             defn_function_li = defn_d[cs[0]]
             defn_function_args, defn_function_body = defn_function_li
             local_env_update = {key:value for key,value in zip(defn_function_args, cs[1:])}
+            if do_log: logger.info('do case defn: update to local_env from defn_d {}'.format(local_env_update))
             return evaluate(defn_function_body,local_env = {**local_env, **local_env_update},defn_d=defn_d)
         else:
             assert False
@@ -104,7 +120,7 @@ def evaluate(e,local_env={},defn_d={}):
 def get_stream(ast):
     """Return a stream of prior samples"""
     while True:
-        yield evaluate_program(ast)[0].item() # just return value, not context
+        yield evaluate_program(ast,do_log=False)[0].item() # just return value, not context
 
 
 def run_deterministic_tests():
