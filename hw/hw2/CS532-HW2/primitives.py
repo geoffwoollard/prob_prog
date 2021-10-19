@@ -73,6 +73,10 @@ def first_primitive(vector):
     return return_idx_primitive(vector,idx_i=0,idx_f=1)
 
 
+def second_primitive(vector):
+    return return_idx_primitive(vector,idx_i=1,idx_f=2)
+
+
 def last_primitive(vector):
     return return_idx_primitive(vector,idx_i=-1,idx_f=None)
 
@@ -115,8 +119,10 @@ def freshvar_primitive(arg):
 
 def vector_primitive(list_of_number_tensor_or_dist):
 
-    for number_or_dist in list_of_number_tensor_or_dist:
-        if not (isinstance(number_or_dist,number) or torch.is_tensor(number_or_dist)):
+    for number_tensor_or_dist in list_of_number_tensor_or_dist:
+        if torch.is_tensor(number_tensor_or_dist):
+            return torch.stack(list_of_number_tensor_or_dist)
+        elif not (isinstance(number_tensor_or_dist,number) or torch.is_tensor(number_tensor_or_dist)):
             return list_of_number_tensor_or_dist
     
     list_of_numbers = list_of_number_tensor_or_dist
@@ -135,6 +141,7 @@ primitives_d = {
     'get' : get_primitive,
     'put' : put_primitive,
     'first' : first_primitive,
+    'second' : second_primitive,
     'last' : last_primitive,
     'append' : torch.cat,
     'hash-map' : hash_map_primitive,
@@ -144,7 +151,12 @@ primitives_d = {
     '<=':le_primitive,
     '==':eq_primitive,
     'rest' : rest_primative,
-    '_':freshvar_primitive,
+    # '_':freshvar_primitive,
+    'mat-transpose': lambda a: a[0].T,
+    'mat-tanh': lambda a: a[0].tanh(),
+    'mat-mul': lambda a: torch.matmul(a[0], a[1]),
+    'mat-add': add_primitive,
+    'mat-repmat': lambda a: a[0].repeat((int(a[1].item()), int(a[2].item()))),
 }
 
 
