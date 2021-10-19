@@ -16,7 +16,7 @@ logger.setLevel(logging.DEBUG)
 number = (int,float)
         
 
-def evaluate_program(ast,sig=None):
+def evaluate_program(ast,sig=None,do_log=False):
     """Evaluate a program as desugared by daphne, generate a sample from the prior
     Args:
         ast: json FOPPL program
@@ -31,9 +31,9 @@ def evaluate_program(ast,sig=None):
         defn_function_body = ast0[3]
         defn_d[defn_function_name] = [defn_function_args,defn_function_body]
         ast1 = ast[1]
-        res = evaluate(ast1,defn_d=defn_d)
+        res = evaluate(ast1,defn_d=defn_d,do_log=do_log)
     elif len(ast) == 1:
-        res = evaluate(ast0,defn_d=defn_d)
+        res = evaluate(ast0,defn_d=defn_d,do_log=do_log)
     else:
         assert False
     return res, sig
@@ -73,6 +73,8 @@ def evaluate(e,local_env={},defn_d={},do_log=False):
         if do_log: logger.info('match case: sample {}'.format(e))
         distribution = evaluate(e[1],local_env,defn_d)
         return distribution.sample()
+    elif e[0] == 'observe':
+        return None
     elif e[0] == 'let': 
         if do_log: logger.info('match case: let {}'.format(e))
         # let [v1 e1] e0

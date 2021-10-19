@@ -92,7 +92,7 @@ def topsort(G):
     return V_topsorted
 
 
-def sample_from_joint(graph):
+def sample_from_joint(graph,do_log=False):
     "This function does ancestral sampling starting from the prior."
     G = graph[1]
     V_topsorted = topsort(G)
@@ -107,7 +107,7 @@ def sample_from_joint(graph):
             assert len(link_function) == 2
             e = link_function[1]
     #         print('e in as',e)
-            distribution = evaluate(e,local_env = local_env)
+            distribution = evaluate(e,local_env = local_env, do_log=do_log)
             E = distribution.sample() # now have concrete value. need to pass it as var to evaluate
             update_local_env = {vertex:E}
             local_env.update(update_local_env)

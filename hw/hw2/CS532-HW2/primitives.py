@@ -96,6 +96,10 @@ def rest_primative(vector):
     return vector[0][1:]
 
 
+def freshvar_primitive(arg):
+    return None
+
+    
 # NB: these functions take a list [c0] or [c0, c1, ..., cn]
 # rely on user to not write something non-sensitcal that will fail (e.g. ["+",1,2,3])
 primitives_d = {
@@ -117,6 +121,7 @@ primitives_d = {
     '<=':le_primitive,
     '==':eq_primitive,
     'rest' : rest_primative,
+    '_':freshvar_primitive,
 }
 
 
@@ -136,11 +141,16 @@ def uniform(low_hi):
     return two_arg_op_primitive(torch.distributions.Uniform,low_hi)
 
 
+def discrete(prob_vector):
+    return one_arg_op_primitive(torch.distributions.Categorical,prob_vector)
+
+
 distributions_d = {
     'normal': normal,
     'beta': beta,
     'exponential': exponential,
     'uniform': uniform,
+    'discrete': discrete,
 }
 
 class Function:
