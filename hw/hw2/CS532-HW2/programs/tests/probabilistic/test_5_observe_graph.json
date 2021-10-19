@@ -1,0 +1,15 @@
+[{}, 
+	{
+		"V": ["observe3", "sample4", "sample2", "sample1"], 
+		"A": {
+			"uniform": ["sample1"], 
+			"sample1": ["observe3", "sample4", "sample2"], 
+			"sample2": ["sample4"]
+		}, 
+		"P": {
+			"sample1": ["sample*", ["uniform", 0, 1]], 
+			"sample2": ["sample*", ["normal", "sample1", 1]], 
+			"observe3": ["observe*", "sample1", 0.5], 
+			"sample4": ["sample*", ["normal", "sample2", "sample1"]]}, 
+		"Y": {"observe3": 0.5}}, 
+"sample4"]
