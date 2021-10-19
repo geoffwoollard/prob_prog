@@ -93,7 +93,22 @@ def topsort(G):
 
 
 def sample_from_joint(graph,do_log=False):
-    "This function does ancestral sampling starting from the prior."
+    """This function does ancestral sampling starting from the prior.
+
+    graph output from `daphne graph -i sugared.daphne`
+    * list of length 3
+      * first entry is defn dict
+        * {"string-defn-function-name":["fn", ["var_1", ..., "var_n"], e_function_body], ...}
+      * second entry is graph: {V,A,P,Y}
+        * "V","A","P","Y" are keys in dict
+        * "V" : ["string_name_vertex_1", ..., "string_name_vertex_n"] # list of string names of vertices
+        * "A" : {"string_name_vertex_1" : [..., "string_name_vertex_i", ...] # dict of arc pairs (u,v) with u a string key in the dict, and the value a list of string names of the vertices. note that the keys can be things like "uniform" and don't have to be vetex name strings
+        * "P" : "string_name_vertex_i" : ["sample*", e_i] # dict. keys vertex name strings and value a rested list with a linking function in it. typically e_i is a distribution object. 
+        * "Y" : observes
+      * third entry is return
+        * name of return rv, or constant
+
+    """
     G = graph[1]
     V_topsorted = topsort(G)
     P = G['P']
@@ -121,15 +136,6 @@ def sample_from_joint(graph,do_log=False):
     if do_log: print('sample_from_joint local_env',local_env)
     if do_log: print('sample_from_joint sampled_graph',sampled_graph)
     return evaluate(return_of_graph,local_env = sampled_graph, do_log=do_log)
-    #sampled_graph[return_of_graph]
-    
-    #return evaluate(sampled_graph[return_of_graph],local_env = local_env, do_log=do_log)
-
-    # return_of_samplefromjoint = {}
-    # for return_of_graph in graph[2]: # meaning of program
-    #     return_of_samplefromjoint[return_of_graph] = sampled_graph[return_of_graph]
-    
-    # return return_of_samplefromjoint
 
 
 def get_stream(graph):
