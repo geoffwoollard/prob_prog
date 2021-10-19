@@ -39,6 +39,7 @@ def evaluate_program(ast,sig=None,do_log=False):
 
 number = (int,float)
 def evaluate(e,local_env={},defn_d={},do_log=False):
+    # TODO: get local_env to evaluate values to tensors, not regular floats
     # remember to return evaluate (recursive)
     # everytime we call evaluate, we have to use local_env, otherwise it gets overwritten with the default {}
     if do_log: logger.info('local_env {}'.format(local_env))
@@ -65,7 +66,7 @@ def evaluate(e,local_env={},defn_d={},do_log=False):
         elif e in local_env.keys():
             if do_log: logger.info('match case: local_env, e {}'.format(e))
             if do_log: logger.info('match case: local_env, local_env[e] {}'.format(local_env[e]))
-            return local_env[e]
+            return local_env[e] # TODO return evaluate?
         elif e in list(defn_d.keys()):
             if do_log: logger.info('match case: defn_d {}'.format(e))
             return e

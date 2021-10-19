@@ -133,8 +133,8 @@ def sample_from_joint(graph,do_log=False):
             assert False
         sampled_graph[vertex] = E
     return_of_graph = graph[2] # meaning of program, but need to evaluate
-    if do_log: print('sample_from_joint local_env',local_env)
-    if do_log: print('sample_from_joint sampled_graph',sampled_graph)
+    # if do_log: print('sample_from_joint local_env',local_env)
+    # if do_log: print('sample_from_joint sampled_graph',sampled_graph)
     return evaluate(return_of_graph,local_env = sampled_graph, do_log=do_log)
 
 
