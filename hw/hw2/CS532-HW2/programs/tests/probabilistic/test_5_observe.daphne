@@ -1,0 +1,5 @@
+(let [z (sample (uniform 0 1))
+	  mu (sample (normal z 1))]
+	  (observe z 0.5)
+	  (sample (normal mu z))
+)
