@@ -118,15 +118,32 @@ def freshvar_primitive(arg):
 
 
 def vector_primitive(list_of_number_tensor_or_dist):
+    # print('list_of_number_tensor_or_dist',list_of_number_tensor_or_dist)
 
-    for number_tensor_or_dist in list_of_number_tensor_or_dist:
-        if torch.is_tensor(number_tensor_or_dist):
-            return torch.stack(list_of_number_tensor_or_dist)
+    return_stack, return_as_is = False, False
+    for idx, number_tensor_or_dist in enumerate(list_of_number_tensor_or_dist):
+        # print('number_tensor_or_dist',number_tensor_or_dist)
+        if torch.is_tensor(number_tensor_or_dist) and (number_tensor_or_dist.reshape(-1).size()[0] > 1):
+            # print('is tensor')
+            return_stack = True
+
         elif not (isinstance(number_tensor_or_dist,number) or torch.is_tensor(number_tensor_or_dist)):
-            return list_of_number_tensor_or_dist
-    
-    list_of_numbers = list_of_number_tensor_or_dist
-    return torch.tensor(list_of_numbers)
+            # print('here')
+            return_as_is = True
+        
+        shape = number_tensor_or_dist.shape
+        if len(shape) > 1 and shape[0] == 1:
+            reshaped_tensor = number_tensor_or_dist[0]
+            list_of_number_tensor_or_dist[idx] = reshaped_tensor
+  
+    if return_stack:
+        return torch.stack(list_of_number_tensor_or_dist)
+    elif return_as_is:
+        return list_of_number_tensor_or_dist
+    else:
+        # print('out here')
+        list_of_numbers = list_of_number_tensor_or_dist
+        return torch.tensor(list_of_numbers)
 
 
 # NB: these functions take a list [c0] or [c0, c1, ..., cn]
