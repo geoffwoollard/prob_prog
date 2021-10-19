@@ -65,16 +65,16 @@ def put_primitive(vector_index_overwritevalue):
     return vector
 
 
-def return_idx_primitive(vector,idx):
-    return vector[0][idx]
+def return_idx_primitive(vector,idx_i,idx_f):
+    return vector[0][idx_i:idx_f]
 
 
 def first_primitive(vector):
-    return return_idx_primitive(vector,idx=0)
+    return return_idx_primitive(vector,idx_i=0,idx_f=1)
 
 
 def last_primitive(vector):
-    return return_idx_primitive(vector,idx=-1)
+    return return_idx_primitive(vector,idx_i=-1,idx_f=None)
 
 
 def hash_map_primitive(hash_pairs):

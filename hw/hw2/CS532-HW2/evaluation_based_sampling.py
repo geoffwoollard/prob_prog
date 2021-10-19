@@ -51,6 +51,7 @@ def evaluate(e,local_env={},defn_d={},do_log=False):
             if do_log: logger.info('match case: number {}'.format(e))
             return torch.tensor([float(e)])
         elif isinstance(e,list):
+            if do_log: logger.info('match case: list {}'.format(e))
             return e
         elif e in list(primitives_d.keys()):
             if do_log: logger.info('match case: primitives_d {}'.format(e))
