@@ -117,9 +117,19 @@ def sample_from_joint(graph,do_log=False):
         else:
             assert False
         sampled_graph[vertex] = E
+    return_of_graph = graph[2] # meaning of program, but need to evaluate
+    if do_log: print('sample_from_joint local_env',local_env)
+    if do_log: print('sample_from_joint sampled_graph',sampled_graph)
+    return evaluate(return_of_graph,local_env = sampled_graph, do_log=do_log)
+    #sampled_graph[return_of_graph]
+    
+    #return evaluate(sampled_graph[return_of_graph],local_env = local_env, do_log=do_log)
 
-    return_of_graph = graph[2] # meaning of program
-    return sampled_graph[return_of_graph]
+    # return_of_samplefromjoint = {}
+    # for return_of_graph in graph[2]: # meaning of program
+    #     return_of_samplefromjoint[return_of_graph] = sampled_graph[return_of_graph]
+    
+    # return return_of_samplefromjoint
 
 
 def get_stream(graph):
