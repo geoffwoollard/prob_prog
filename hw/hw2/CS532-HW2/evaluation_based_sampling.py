@@ -74,7 +74,7 @@ def evaluate(e,local_env={},defn_d={},do_log=False):
             assert False
     elif e[0] == 'sample':
         if do_log: logger.info('match case: sample {}'.format(e))
-        distribution = evaluate(e[1],local_env,defn_d)
+        distribution = evaluate(e[1],local_env,defn_d,do_log=do_log)
         return distribution.sample()
     elif e[0] == 'observe':
         return None
@@ -87,27 +87,29 @@ def evaluate(e,local_env={},defn_d={},do_log=False):
             # e[2] : e0
         # evaluates e1 to c1 and binds this value to e0
         # this means we update the context with old context plus {v1:c1}
-        c1 = evaluate(e[1][1],local_env,defn_d) # evaluates e1 to c1
+        c1 = evaluate(e[1][1],local_env,defn_d,do_log=do_log) # evaluates e1 to c1
         v1 = e[1][0]
-        return evaluate(e[2], local_env = {**local_env,v1:c1},defn_d=defn_d)
+        return evaluate(e[2], local_env = {**local_env,v1:c1},defn_d=defn_d,do_log=do_log)
     elif e[0] == 'if': # if e0 e1 e2
         if do_log: logger.info('match case: if {}'.format(e))
         e0 = e[1]
         e1 = e[2]
         e2 = e[3]
-        if evaluate(e0,local_env,defn_d):
-            return evaluate(e1,local_env,defn_d)
+        if evaluate(e0,local_env,defn_d,do_log=do_log):
+            return evaluate(e1,local_env,defn_d,do_log=do_log)
         else:
-            return evaluate(e2,local_env,defn_d) 
+            return evaluate(e2,local_env,defn_d,do_log=do_log) 
 
     else:
         cs = []
         for ei in e:
             if do_log: logger.info('cycling through expressions. ei {}'.format(ei))
-            c = evaluate(ei,local_env,defn_d)
+            c = evaluate(ei,local_env,defn_d,do_log=do_log)
             cs.append(c)
         if cs[0] in primitives_d:
             if do_log: logger.info('do case primitives_d: cs0 {}'.format(cs[0]))
+            if do_log: logger.info('do case primitives_d: cs1 {}'.format(cs[1:]))
+            if do_log: logger.info('do case primitives_d: primitives_d[cs[0]] {}'.format(primitives_d[cs[0]]))
             return primitives_d[cs[0]](cs[1:])
         elif cs[0] in distributions_d:
             if do_log: logger.info('do case distributions_d: cs0 {}'.format(cs[0]))
@@ -118,7 +120,7 @@ def evaluate(e,local_env={},defn_d={},do_log=False):
             defn_function_args, defn_function_body = defn_function_li
             local_env_update = {key:value for key,value in zip(defn_function_args, cs[1:])}
             if do_log: logger.info('do case defn: update to local_env from defn_d {}'.format(local_env_update))
-            return evaluate(defn_function_body,local_env = {**local_env, **local_env_update},defn_d=defn_d)
+            return evaluate(defn_function_body,local_env = {**local_env, **local_env_update},defn_d=defn_d,do_log=do_log)
         else:
             assert False
 
