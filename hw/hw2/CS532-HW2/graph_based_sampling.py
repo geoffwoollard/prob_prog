@@ -153,7 +153,8 @@ def get_stream(graph):
 
 def run_deterministic_tests():
     
-    for i in [1,2,3,4,5,7,9,10,12]: # TODO: vector returns
+    tot=0
+    for i in range(1,13): # TODO: vector returns
         os.chdir('/Users/gw/repos/prob_prog/hw/hw2/CS532-HW2/')
 
         #note: this path should be with respect to the daphne path!
@@ -174,12 +175,13 @@ def run_deterministic_tests():
         ret = deterministic_eval(graph[-1])
         try:
             assert(is_tol(ret, truth))
+            tot += 1
         except AssertionError:
             raise AssertionError('return value {} is not equal to truth {} for graph {}'.format(ret,truth,graph))
         
         print('Test passed')
         
-    print('All deterministic tests passed')
+    print('All {} deterministic tests passed'.format(tot))
     
 
 

@@ -122,16 +122,13 @@ def freshvar_primitive(arg):
     return None
 
 
-def vector_primitive(args):
-    # print('args',args)
+def vector_primitive(vector):
     ret = list()
-    for e in args:
+    for e in vector:
         try:
-            
-            ret.append(e)
-        except:
             ret.append(e.tolist())
-    # print('ret',ret)
+        except:
+            ret.append(e)
     try:
         return torch.FloatTensor(ret)
     except:

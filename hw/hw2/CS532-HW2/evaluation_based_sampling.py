@@ -50,7 +50,7 @@ def evaluate(e,local_env={},defn_d={},do_log=False):
 
         if isinstance(e, number):
             if do_log: logger.info('match case: number {}'.format(e))
-            return torch.tensor([float(e)])
+            return torch.tensor(float(e))
         elif isinstance(e,list):
             if do_log: logger.info('match case: list {}'.format(e))
             return e
