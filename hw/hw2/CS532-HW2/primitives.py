@@ -118,23 +118,28 @@ def freshvar_primitive(arg):
 
 
 def vector_primitive(list_of_number_tensor_or_dist):
-    # print('list_of_number_tensor_or_dist',list_of_number_tensor_or_dist)
+    print('list_of_number_tensor_or_dist',list_of_number_tensor_or_dist)
 
     return_stack, return_as_is = False, False
-    for idx, number_tensor_or_dist in enumerate(list_of_number_tensor_or_dist):
-        # print('number_tensor_or_dist',number_tensor_or_dist)
+    for idx in range(len(list_of_number_tensor_or_dist)):
+        number_tensor_or_dist = list_of_number_tensor_or_dist[idx]
+        print('number_tensor_or_dist',number_tensor_or_dist)
         if torch.is_tensor(number_tensor_or_dist) and (number_tensor_or_dist.reshape(-1).size()[0] > 1):
-            # print('is tensor')
+            print('elements are tensor with len > 1')
             return_stack = True
 
         elif not (isinstance(number_tensor_or_dist,number) or torch.is_tensor(number_tensor_or_dist)):
-            # print('here')
+            print('elements are number or tensors of size 1')
             return_as_is = True
         
         shape = number_tensor_or_dist.shape
         if len(shape) > 1 and shape[0] == 1:
             reshaped_tensor = number_tensor_or_dist[0]
             list_of_number_tensor_or_dist[idx] = reshaped_tensor
+            print('reshape',reshaped_tensor)
+
+    print('full reshaped', list_of_number_tensor_or_dist)
+
   
     if return_stack:
         return torch.stack(list_of_number_tensor_or_dist)
