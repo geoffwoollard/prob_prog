@@ -6,14 +6,12 @@ import torch
 
 from daphne import daphne
 from tests import is_tol, run_prob_test,load_truth
-from primitives import primitives_d, distributions_d
+from primitives import primitives_d, distributions_d, number, distribution_types
 
 
 logging.basicConfig(format='%(levelname)s:%(message)s')
 logger = logging.getLogger('simple_example')
 logger.setLevel(logging.DEBUG)
-
-number = (int,float)
         
 
 def evaluate_program(ast,sig=None,do_log=False):
@@ -52,6 +50,8 @@ def evaluate(e,local_env={},defn_d={},do_log=False):
         if isinstance(e, number):
             if do_log: logger.info('match case: number {}'.format(e))
             return torch.tensor([float(e)])
+        elif isinstance(e,list):
+            return e
         elif e in list(primitives_d.keys()):
             if do_log: logger.info('match case: primitives_d {}'.format(e))
             return e
@@ -66,6 +66,9 @@ def evaluate(e,local_env={},defn_d={},do_log=False):
             return local_env[e]
         elif e in list(defn_d.keys()):
             if do_log: logger.info('match case: defn_d {}'.format(e))
+            return e
+        elif isinstance(e,distribution_types):
+            if do_log: logger.info('match case: distribution {}'.format(e))
             return e
         else:
             assert False

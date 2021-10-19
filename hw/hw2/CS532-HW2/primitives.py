@@ -1,4 +1,13 @@
 import torch
+import numpy as np
+
+number = (float, int)
+distribution_types = (
+    torch.distributions.Normal,
+    torch.distributions.Beta,
+    torch.distributions.Uniform,
+    torch.distributions.Exponential,
+    torch.distributions.Categorical)
 
 
 def two_arg_op_primitive(op,arg1_arg2):
@@ -37,6 +46,10 @@ def get_primitive(vector_and_index):
         return vector[index.item()]
     elif torch.is_tensor(vector):
         return vector[index.long()]
+    elif isinstance(vector,list):
+        index_int = int(index)
+        assert np.isclose(index_int,index) # TODO: use native pytorch
+        return vector[index]
     else:
         assert False,  'vector type {} case not implemented'.format(type(vector))
 
@@ -99,7 +112,17 @@ def rest_primative(vector):
 def freshvar_primitive(arg):
     return None
 
+
+def vector_primitive(list_of_number_tensor_or_dist):
+
+    for number_or_dist in list_of_number_tensor_or_dist:
+        if not (isinstance(number_or_dist,number) or torch.is_tensor(number_or_dist)):
+            return list_of_number_tensor_or_dist
     
+    list_of_numbers = list_of_number_tensor_or_dist
+    return torch.tensor(list_of_numbers)
+
+
 # NB: these functions take a list [c0] or [c0, c1, ..., cn]
 # rely on user to not write something non-sensitcal that will fail (e.g. ["+",1,2,3])
 primitives_d = {
@@ -108,7 +131,7 @@ primitives_d = {
     '/': divide_primitive,
     '*': multiply_primitive,
     'sqrt': sqrt_primitive,
-    'vector': torch.tensor,
+    'vector': vector_primitive,
     'get' : get_primitive,
     'put' : put_primitive,
     'first' : first_primitive,
