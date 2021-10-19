@@ -17,7 +17,8 @@ env = {'normal': dist.Normal,
        'sqrt': torch.sqrt}
 
 
-# def deterministic_eval(exp):
+def deterministic_eval(exp):
+    return evaluate(exp)
 #     "Evaluation function for the deterministic target language of the graph based representation."
 #     if type(exp) is list:
 #         op = exp[0]
@@ -152,9 +153,23 @@ def get_stream(graph):
 
 def run_deterministic_tests():
     
-    for i in range(1,13):
+    for i in [1,2,3,4,5,7,9,10,12]: # TODO: vector returns
+        os.chdir('/Users/gw/repos/prob_prog/hw/hw2/CS532-HW2/')
+
         #note: this path should be with respect to the daphne path!
-        graph = daphne(['graph','-i','../CS532-HW2/programs/tests/deterministic/test_{}.daphne'.format(i)])
+        sugared_fname = '../prob_prog/hw/hw2/CS532-HW2/programs/tests/deterministic/test_{}.daphne'.format(i)
+        
+        graph_json_fname = '/Users/gw/repos/prob_prog/' + sugared_fname.replace('.daphne','_graph.json')
+        if os.path.isfile(graph_json_fname):
+            with open(graph_json_fname) as f:
+                graph = json.load(f)
+        else:
+            #note: the sugared path that goes into daphne desugar should be with respect to the daphne path!
+            graph = daphne(['graph', '-i', sugared_fname]) 
+            with open(graph_json_fname, 'w') as f:
+                json.dump(graph, f)
+
+        
         truth = load_truth('programs/tests/deterministic/test_{}.truth'.format(i))
         ret = deterministic_eval(graph[-1])
         try:
@@ -184,7 +199,8 @@ def run_probabilistic_tests():
         else:
             #note: the sugared path that goes into daphne desugar should be with respect to the daphne path!
             graph = daphne(['graph', '-i', sugared_fname]) 
-            # TODO: put in write json 
+            with open(graph_json_fname, 'w') as f:
+                json.dump(graph, f)
         
         truth = load_truth('programs/tests/probabilistic/test_{}.truth'.format(i)) 
         stream = get_stream(graph)

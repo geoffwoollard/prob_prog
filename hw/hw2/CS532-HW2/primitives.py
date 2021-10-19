@@ -81,6 +81,11 @@ def last_primitive(vector):
     return return_idx_primitive(vector,idx_i=-1,idx_f=None)
 
 
+def nth_primitive(vector_nth):
+    vector, nth = vector_nth
+    return return_idx_primitive(vector,idx_i=nth,idx_f=nth+1)
+
+
 def hash_map_primitive(hash_pairs):
     keys = hash_pairs[::2]
     # dict keys as tensors problematic. can make but lookup fails on fresh but equivalent tensor (bc memory look up?) 
@@ -118,16 +123,28 @@ def freshvar_primitive(arg):
 
 
 def vector_primitive(args):
+    # print('args',args)
     ret = list()
     for e in args:
         try:
-            ret.append(e.tolist())
-        except:
+            
             ret.append(e)
+        except:
+            ret.append(e.tolist())
+    # print('ret',ret)
     try:
         return torch.FloatTensor(ret)
     except:
         return ret
+
+def conj_primitive(args):
+    # TODO: write test
+    base = args[0]
+    rest = args[1:]
+    for i in rest:
+        base = torch.cat(base, i)
+
+            
 
 
 # NB: these functions take a list [c0] or [c0, c1, ..., cn]
@@ -144,6 +161,7 @@ primitives_d = {
     'first' : first_primitive,
     'second' : second_primitive,
     'last' : last_primitive,
+    'nth' : nth_primitive,
     'append' : torch.cat,
     'hash-map' : hash_map_primitive,
     '>':gt_primitive,
@@ -154,8 +172,8 @@ primitives_d = {
     'rest' : rest_primative,
     # '_':freshvar_primitive,
     'mat-transpose': lambda a: a[0].T,
-    'mat-tanh': lambda a: a[0].tanh(),
-    'mat-mul': lambda a: torch.matmul(a[0], a[1]),
+    'mat-tanh': torch.tanh,
+    'mat-mul': lambda a: torch.matmul(a[0],a[1]),
     'mat-add': add_primitive,
     'mat-repmat': lambda a: a[0].repeat((int(a[1].item()), int(a[2].item()))),
 }

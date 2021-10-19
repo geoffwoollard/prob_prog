@@ -135,6 +135,7 @@ def get_stream(ast):
 
 def run_deterministic_tests():
     
+    tot=0
     for i in range(1,14):
         os.chdir('/Users/gw/repos/prob_prog/hw/hw2/CS532-HW2/')
         sugared_fname = '../prob_prog/hw/hw2/CS532-HW2/programs/tests/deterministic/test_{}.daphne'.format(i)
@@ -143,19 +144,21 @@ def run_deterministic_tests():
             with open(desugared_ast_json_fname) as f:
                 ast = json.load(f)
         else:
-            assert False
             #note: the sugared path that goes into daphne desugar should be with respect to the daphne path!
             ast = daphne(['desugar', '-i', sugared_fname])
+            with open(desugared_ast_json_fname, 'w') as f:
+                json.dump(ast, f) 
         truth = load_truth('programs/tests/deterministic/test_{}.truth'.format(i))
         ret, sig = evaluate_program(ast)
         try:
             assert(is_tol(ret, truth))
+            tot += 1
         except AssertionError:
             raise AssertionError('return value {} is not equal to truth {} for exp {}'.format(ret,truth,ast))
         
         print('Test %i passed'%i)
         
-    print('All deterministic tests passed')
+    print('All {} deterministic tests passed'.format(i))
     
 
 
@@ -174,7 +177,9 @@ def run_probabilistic_tests():
         else:
             # TODO: put in write json
             #note: the sugared path that goes into daphne desugar should be with respect to the daphne path!
-            ast = daphne(['desugar', '-i', sugared_fname])  
+            ast = daphne(['desugar', '-i', sugared_fname]) 
+            with open(desugared_ast_json_fname, 'w') as f:
+                json.dump(ast, f) 
         truth = load_truth('programs/tests/probabilistic/test_{}.truth'.format(i))
         
         stream = get_stream(ast)
