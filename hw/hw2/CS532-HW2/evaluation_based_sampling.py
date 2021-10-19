@@ -41,7 +41,7 @@ number = (int,float)
 def evaluate(e,local_env={},defn_d={},do_log=False):
     # remember to return evaluate (recursive)
     # everytime we call evaluate, we have to use local_env, otherwise it gets overwritten with the default {}
-    
+    if do_log: logger.info('local_env {}'.format(local_env))
     # get first expression out of list or list of one
     if not isinstance(e,list) or len(e) == 1:
         if isinstance(e,list):
@@ -59,11 +59,12 @@ def evaluate(e,local_env={},defn_d={},do_log=False):
         elif e in list(distributions_d.keys()):
             if do_log: logger.info('match case: distributions_d {}'.format(e))
             return e
-        elif torch.is_tensor(e):
+        elif torch.is_tensor(e) and not len(list(e.shape)) == 0:
             if do_log: logger.info('match case: is_tensor {}'.format(e))
             return e
         elif e in local_env.keys():
-            if do_log: logger.info('match case: local_env {}'.format(e))
+            if do_log: logger.info('match case: local_env, e {}'.format(e))
+            if do_log: logger.info('match case: local_env, local_env[e] {}'.format(local_env[e]))
             return local_env[e]
         elif e in list(defn_d.keys()):
             if do_log: logger.info('match case: defn_d {}'.format(e))
@@ -76,7 +77,7 @@ def evaluate(e,local_env={},defn_d={},do_log=False):
     elif e[0] == 'sample':
         if do_log: logger.info('match case: sample {}'.format(e))
         distribution = evaluate(e[1],local_env,defn_d,do_log=do_log)
-        return distribution.sample()
+        return distribution.sample().reshape(1,) # convert to right shape for Categorical return of torch(float)
     elif e[0] == 'observe':
         return None
     elif e[0] == 'let': 
