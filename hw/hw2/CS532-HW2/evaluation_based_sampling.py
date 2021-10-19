@@ -162,7 +162,7 @@ def run_probabilistic_tests():
             with open(desugared_ast_json_fname) as f:
                 ast = json.load(f)
         else:
-            assert False
+            # TODO: put in write json
             #note: the sugared path that goes into daphne desugar should be with respect to the daphne path!
             ast = daphne(['desugar', '-i', sugared_fname])  
         truth = load_truth('programs/tests/probabilistic/test_{}.truth'.format(i))
