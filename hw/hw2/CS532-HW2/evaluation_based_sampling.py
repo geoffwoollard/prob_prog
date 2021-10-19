@@ -185,6 +185,17 @@ if __name__ == '__main__':
 
 
     for i in range(1,5):
-        ast = daphne(['desugar', '-i', '../CS532-HW2/programs/{}.daphne'.format(i)])
+        os.chdir('/Users/gw/repos/prob_prog/hw/hw2/CS532-HW2/')
+        sugared_fname = '../prob_prog/hw/hw2/CS532-HW2/programs/{}.daphne'.format(i)
+        desugared_ast_json_fname = '/Users/gw/repos/prob_prog/' + sugared_fname.replace('.daphne','.json')
+        if os.path.isfile(desugared_ast_json_fname):
+            with open(desugared_ast_json_fname) as f:
+                ast = json.load(f)
+        else:
+            #note: the sugared path that goes into daphne desugar should be with respect to the daphne path!
+            ast = daphne(['desugar', '-i', sugared_fname]) 
+            with open(desugared_ast_json_fname, 'w') as f:
+                json.dump(ast, f)
+
         print('\n\n\nSample of prior of program {}:'.format(i))
         print(evaluate_program(ast)[0])

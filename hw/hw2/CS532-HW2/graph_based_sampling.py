@@ -193,7 +193,18 @@ if __name__ == '__main__':
 
 
     for i in range(1,5):
-        graph = daphne(['graph','-i','../CS532-HW2/programs/{}.daphne'.format(i)])
+        # graph = daphne(['graph','-i','../CS532-HW2/programs/{}.daphne'.format(i)])
+        os.chdir('/Users/gw/repos/prob_prog/hw/hw2/CS532-HW2/')
+        sugared_fname = '../prob_prog/hw/hw2/CS532-HW2/programs/{}.daphne'.format(i)
+        graph_json_fname = '/Users/gw/repos/prob_prog/' + sugared_fname.replace('.daphne','_graph.json')
+        if os.path.isfile(graph_json_fname):
+            with open(graph_json_fname) as f:
+                graph = json.load(f)
+        else:
+            #note: the sugared path that goes into daphne desugar should be with respect to the daphne path!
+            graph = daphne(['graph', '-i', sugared_fname]) 
+            with open(graph_json_fname, 'w') as f:
+                json.dump(graph, f)
         print('\n\n\nSample of prior of program {}:'.format(i))
         print(sample_from_joint(graph))    
 
