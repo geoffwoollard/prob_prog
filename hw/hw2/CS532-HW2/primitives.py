@@ -142,7 +142,14 @@ def conj_primitive(args):
         base = torch.cat(base, i)
 
             
+def append_primitive(vector_element):
+        vector, element = vector_element
+        # arg2 must be torch.tensor([float]), not torch.tensor(float) otherwise torch.cat fails
+        return torch.cat((vector,torch.Tensor([element])), 0)
 
+def tanh_primitive(arg):
+    return one_arg_op_primitive(torch.tanh,arg)  
+    
 
 # NB: these functions take a list [c0] or [c0, c1, ..., cn]
 # rely on user to not write something non-sensitcal that will fail (e.g. ["+",1,2,3])
@@ -159,7 +166,7 @@ primitives_d = {
     'second' : second_primitive,
     'last' : last_primitive,
     'nth' : nth_primitive,
-    'append' : torch.cat,
+    'append' : append_primitive,
     'hash-map' : hash_map_primitive,
     '>':gt_primitive,
     '<':lt_primitive,
@@ -169,7 +176,7 @@ primitives_d = {
     'rest' : rest_primative,
     # '_':freshvar_primitive,
     'mat-transpose': lambda a: a[0].T,
-    'mat-tanh': torch.tanh,
+    'mat-tanh': tanh_primitive,
     'mat-mul': lambda a: torch.matmul(a[0],a[1]),
     'mat-add': add_primitive,
     'mat-repmat': lambda a: a[0].repeat((int(a[1].item()), int(a[2].item()))),

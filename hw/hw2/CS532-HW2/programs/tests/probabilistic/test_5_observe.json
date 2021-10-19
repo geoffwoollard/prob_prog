@@ -1,0 +1,1 @@
+[["let", ["z", ["sample", ["uniform", 0, 1]]], ["let", ["mu", ["sample", ["normal", "z", 1]]], ["let", ["dontcare0", ["observe", "z", 0.5]], ["sample", ["normal", "mu", "z"]]]]]]

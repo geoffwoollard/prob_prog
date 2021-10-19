@@ -78,7 +78,7 @@ def evaluate(e,local_env={},defn_d={},do_log=False):
     elif e[0] == 'sample':
         if do_log: logger.info('match case: sample {}'.format(e))
         distribution = evaluate(e[1],local_env,defn_d,do_log=do_log)
-        return distribution.sample().reshape(1,) # convert to right shape for Categorical return of torch(float)
+        return distribution.sample() # match shape in number base case
     elif e[0] == 'observe':
         return None
     elif e[0] == 'let': 
