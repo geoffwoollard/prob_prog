@@ -91,6 +91,11 @@ def le_primitive(consequent_alternative):
 def eq_primitive(consequent_alternative):
     return two_arg_op_primitive(torch.eq,consequent_alternative)
 
+
+def rest_primative(vector):
+    return vector[0][1:]
+
+
 # NB: these functions take a list [c0] or [c0, c1, ..., cn]
 # rely on user to not write something non-sensitcal that will fail (e.g. ["+",1,2,3])
 primitives_d = {
@@ -111,6 +116,7 @@ primitives_d = {
     '>=':ge_primitive,
     '<=':le_primitive,
     '==':eq_primitive,
+    'rest' : rest_primative,
 }
 
 
