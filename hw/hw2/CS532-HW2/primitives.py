@@ -1,3 +1,13 @@
+"""primitives (and distributions) used to evaluate algorithm 6 in 
+van de Meent, J.-W., Paige, B., Yang, H., & Wood, F. (2018). 
+An Introduction to Probabilistic Programming, XX(Xx), 1–221. 
+http://doi.org/10.1561/XXXXXXXXXX
+
+Acknowledgements to Yuan T https://github.com/yuant95/CPSC532W/blob/master/CS532-HW2/primitives.py
+and 
+Masoud Mokhtari https://github.com/MasoudMo/CPSC-532W/blob/master/HW2/primitives.py
+"""
+
 import torch
 import numpy as np
 
