@@ -49,7 +49,7 @@ def get_primitive(vector_and_index):
     elif isinstance(vector,list):
         index_int = int(index)
         assert np.isclose(index_int,index) # TODO: use native pytorch
-        return vector[index]
+        return vector[index_int]
     else:
         assert False,  'vector type {} case not implemented'.format(type(vector))
 
