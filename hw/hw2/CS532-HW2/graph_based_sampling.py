@@ -71,26 +71,26 @@ class Graph:
 
         self.topsorted = stack
 
-def topsort(G):
+def topsort(verteces):
     """Toplogical sort Daphne Graph.
 
     G = {A,V,P,Y}
     """
     
-    v_to_int = {key:val for val, key in enumerate(G['V'])}
+    v_to_int = {key:val for val, key in enumerate(verteces)}
     int_to_v = {val:key for key, val in v_to_int.items()}
 
     # make adjecency from parsed format
-    g = Graph(len(G['V']))
-    for key_u, val_v_list in G['A'].items():
-        if key_u in G['V']:
+    g = Graph(len(verteces))
+    for key_u, val_v_list in verteces.items():
+        if key_u in verteces:
             for v in val_v_list:
                 g.addEdge(v_to_int[key_u],v_to_int[v])
     # topsort
     g.topologicalSort()
     # map back to vertex string labels
-    V_topsorted = [int_to_v[i] for i in g.topsorted]
-    return V_topsorted
+    verteces_topsorted = [int_to_v[i] for i in g.topsorted]
+    return verteces_topsorted
 
 
 def sample_from_joint(graph,do_log=False):
@@ -111,12 +111,13 @@ def sample_from_joint(graph,do_log=False):
 
     """
     G = graph[1]
-    V_topsorted = topsort(G)
+    verteces = G['V']
+    verteces_topsorted = topsort(verteces)
     P = G['P']
     Y = G['Y']
     sampled_graph = {}
     local_env = {}
-    for vertex in V_topsorted:
+    for vertex in verteces_topsorted:
         link_function = P[vertex]
 
         if link_function[0] == 'sample*':
