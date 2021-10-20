@@ -128,8 +128,9 @@ def sample_from_joint(graph,do_log=False):
             update_local_env = {vertex:E}
             local_env.update(update_local_env)
         elif link_function[0] == 'observe*':
-            assert len(link_function) == 3
-            E = Y[vertex]
+            pass
+            # assert len(link_function) == 3
+            # E = Y[vertex]
         else:
             assert False
         sampled_graph[vertex] = E
