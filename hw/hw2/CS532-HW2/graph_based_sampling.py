@@ -71,7 +71,7 @@ class Graph:
 
         self.topsorted = stack
 
-def topsort(verteces):
+def topsort(verteces,arcs):
     """Toplogical sort Daphne Graph.
 
     G = {A,V,P,Y}
@@ -82,7 +82,7 @@ def topsort(verteces):
 
     # make adjecency from parsed format
     g = Graph(len(verteces))
-    for key_u, val_v_list in verteces.items():
+    for key_u, val_v_list in arcs.items():
         if key_u in verteces:
             for v in val_v_list:
                 g.addEdge(v_to_int[key_u],v_to_int[v])
@@ -112,14 +112,14 @@ def sample_from_joint(graph,do_log=False):
     """
     G = graph[1]
     verteces = G['V']
-    verteces_topsorted = topsort(verteces)
+    arcs = G['A']
+    verteces_topsorted = topsort(verteces, arcs)
     P = G['P']
     Y = G['Y']
     sampled_graph = {}
     local_env = {}
     for vertex in verteces_topsorted:
         link_function = P[vertex]
-
         if link_function[0] == 'sample*':
             assert len(link_function) == 2
             e = link_function[1]
@@ -134,7 +134,8 @@ def sample_from_joint(graph,do_log=False):
             # E = Y[vertex]
         else:
             assert False
-        sampled_graph[vertex] = E
+        # sampled_graph[vertex] = E
+    sampled_graph = local_env
     return_of_graph = graph[2] # meaning of program, but need to evaluate
     # if do_log: print('sample_from_joint local_env',local_env)
     # if do_log: print('sample_from_joint sampled_graph',sampled_graph)
