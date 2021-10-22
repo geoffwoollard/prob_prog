@@ -184,7 +184,7 @@ primitives_d = {
     '<':lt_primitive,
     '>=':ge_primitive,
     '<=':le_primitive,
-    '==':eq_primitive,
+    '=':eq_primitive,
     'rest' : rest_primative,
     # '_':freshvar_primitive,
     'mat-transpose': lambda a: a[0].T,
