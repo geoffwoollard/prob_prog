@@ -17,7 +17,9 @@ distribution_types = (
     torch.distributions.Beta,
     torch.distributions.Uniform,
     torch.distributions.Exponential,
-    torch.distributions.Categorical)
+    torch.distributions.Categorical,
+    torch.distributions.bernoulli.Bernoulli
+    )
 
 
 def two_arg_op_primitive(op,arg1_arg2):
@@ -212,6 +214,8 @@ def uniform(low_hi):
 def discrete(prob_vector):
     return one_arg_op_primitive(torch.distributions.Categorical,prob_vector)
 
+def flip(prob_vector):
+    return one_arg_op_primitive(torch.distributions.bernoulli.Bernoulli,prob_vector)
 
 distributions_d = {
     'normal': normal,
@@ -219,6 +223,7 @@ distributions_d = {
     'exponential': exponential,
     'uniform': uniform,
     'discrete': discrete,
+    'flip': flip,
 }
 
 class Function:
