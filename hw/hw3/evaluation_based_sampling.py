@@ -112,7 +112,7 @@ def evaluate(e,sigma=0,local_env={},defn_d={},do_log=False):
         # this means we update the context with old context plus {v1:c1}
         c1, sigma = evaluate(e[1][1],sigma,local_env,defn_d,do_log=do_log) # evaluates e1 to c1
         v1 = e[1][0]
-        return evaluate(e[2], sigma, local_env = {**local_env,v1:c1},defn_d=defn_d,do_log=do_log), sigma
+        return evaluate(e[2], sigma, local_env = {**local_env,v1:c1},defn_d=defn_d,do_log=do_log)
     elif e[0] == 'if': # if e0 e1 e2
         if do_log: logger.info('match case if: e {}, sigma {}'.format(e, sigma))
         e1 = e[1]
