@@ -80,7 +80,7 @@ def evaluate(e,sigma=0,local_env={},defn_d={},do_log=False):
         elif e in local_env.keys():
             if do_log: logger.info('match case local_env: e {}, sigma {}'.format(e, sigma))
             if do_log: logger.info('match case local_env: local_env[e] {}'.format(local_env[e]))
-            return local_env[e] # TODO return evaluate?
+            return local_env[e], sigma # TODO return evaluate?
         elif e in list(defn_d.keys()):
             if do_log: logger.info('match case defn_d: e {}, sigma {}'.format(e, sigma))
             return e, sigma
