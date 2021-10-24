@@ -18,7 +18,8 @@ distribution_types = (
     torch.distributions.Uniform,
     torch.distributions.Exponential,
     torch.distributions.Categorical,
-    torch.distributions.bernoulli.Bernoulli
+    torch.distributions.bernoulli.Bernoulli,
+    torch.distributions.dirichlet.Dirichlet,
     )
 
 
@@ -142,7 +143,7 @@ def vector_primitive(vector):
         except:
             ret.append(e)
     try:
-        return torch.FloatTensor(ret)
+        return torch.tensor(ret)
     except:
         return ret
 
@@ -159,9 +160,18 @@ def append_primitive(vector_element):
         # arg2 must be torch.tensor([float]), not torch.tensor(float) otherwise torch.cat fails
         return torch.cat((vector,torch.Tensor([element])), 0)
 
+
 def tanh_primitive(arg):
     return one_arg_op_primitive(torch.tanh,arg)  
+
+
+def and_primitive(arg1_arg2):
+    return two_arg_op_primitive(torch.logical_and,arg1_arg2)  
     
+
+def or_primitive(arg1_arg2):
+    return two_arg_op_primitive(torch.logical_or,arg1_arg2)  
+
 
 # NB: these functions take a list [c0] or [c0, c1, ..., cn]
 # rely on user to not write something non-sensitcal that will fail (e.g. ["+",1,2,3])
@@ -192,6 +202,8 @@ primitives_d = {
     'mat-mul': lambda a: torch.matmul(a[0],a[1]),
     'mat-add': add_primitive,
     'mat-repmat': lambda a: a[0].repeat((int(a[1].item()), int(a[2].item()))),
+    'and' : and_primitive,
+    'or' : or_primitive,
 }
 
 
@@ -214,8 +226,18 @@ def uniform(low_hi):
 def discrete(prob_vector):
     return one_arg_op_primitive(torch.distributions.Categorical,prob_vector)
 
-def flip(prob_vector):
-    return one_arg_op_primitive(torch.distributions.bernoulli.Bernoulli,prob_vector)
+
+def flip(prob):
+    return one_arg_op_primitive(torch.distributions.bernoulli.Bernoulli,prob)
+
+
+def dirichlet(concentration):
+    return one_arg_op_primitive(torch.distributions.dirichlet.Dirichlet,concentration)
+
+
+def gamma(concentration_rate):
+    return two_arg_op_primitive(torch.distributions.gamma.Gamma,concentration_rate)
+
 
 distributions_d = {
     'normal': normal,
@@ -224,6 +246,8 @@ distributions_d = {
     'uniform': uniform,
     'discrete': discrete,
     'flip': flip,
+    'dirichlet' : dirichlet,
+    'gamma' : gamma,
 }
 
 class Function:

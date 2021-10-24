@@ -62,6 +62,9 @@ def evaluate(e,sigma=0,local_env={},defn_d={},do_log=False):
     if not isinstance(e,list) or len(e) == 1:
         if isinstance(e,list):
             e = e[0]
+        if isinstance(e,bool):
+            if do_log: logger.info('match case number: e {}, sigma {}'.format(e, sigma))
+            return torch.tensor(e), sigma
         if isinstance(e, number):
             if do_log: logger.info('match case number: e {}, sigma {}'.format(e, sigma))
             return torch.tensor(float(e)), sigma
@@ -74,7 +77,7 @@ def evaluate(e,sigma=0,local_env={},defn_d={},do_log=False):
         elif e in list(distributions_d.keys()):
             if do_log: logger.info('match case distributions_d: e {}, sigma {}'.format(e, sigma))
             return e, sigma
-        elif torch.is_tensor(e) and not len(list(e.shape)) == 0:
+        elif torch.is_tensor(e):
             if do_log: logger.info('match case is_tensor: e {}, sigma {}'.format(e, sigma))
             return e, sigma
         elif e in local_env.keys():
@@ -94,12 +97,16 @@ def evaluate(e,sigma=0,local_env={},defn_d={},do_log=False):
         distribution, sigma = evaluate(e[1],sigma,local_env,defn_d,do_log=do_log)
         return distribution.sample(), sigma # match shape in number base case
     elif e[0] == 'observe':
+        if do_log: logger.info('match case observe: e {}, sigma {}'.format(e,sigma))
         e1, e2 = e[1:]
         d1, sigma = evaluate(e1,sigma,local_env,defn_d,do_log=do_log)
         c2, sigma = evaluate(e2,sigma,local_env,defn_d,do_log=do_log)
-        log_w = d1.log_prob(c2)
-        if do_log: logger.info('match case observe: e {}, sigma {}, log_w {}'.format(e,sigma,log_w))
-        sigma  = sigma + log_w
+        if isinstance(c2,bool) or c2.type() in ['torch.BoolTensor', 'torch.LongTensor']:
+            log_w = d1.log_prob(c2.double())
+        else:
+            log_w = d1.log_prob(c2)
+        if do_log: logger.info('match case observe: d1 {}, c2 {}, log_w {}, sigma {}'.format(e,d1, c2, log_w, sigma))
+        sigma += log_w
         return c2, sigma
     elif e[0] == 'let': 
         if do_log: logger.info('match case let: e {}, sigma {}'.format(e, sigma))
