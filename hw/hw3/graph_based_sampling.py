@@ -1,6 +1,7 @@
 from collections import defaultdict
 import os
 import json
+import logging
 
 import torch
 import torch.distributions as dist
@@ -11,6 +12,10 @@ from daphne import daphne
 from tests import is_tol, run_prob_test,load_truth
 from evaluation_based_sampling import evaluate
 
+logging.basicConfig(format='%(levelname)s:%(message)s')
+logger_graph = logging.getLogger('simple_example')
+logger_graph.setLevel(logging.DEBUG)
+
 # Put all function mappings from the deterministic language environment to your
 # Python evaluation context here:
 env = {'normal': dist.Normal,
@@ -19,16 +24,6 @@ env = {'normal': dist.Normal,
 
 def deterministic_eval(exp):
     return evaluate(exp)
-#     "Evaluation function for the deterministic target language of the graph based representation."
-#     if type(exp) is list:
-#         op = exp[0]
-#         args = exp[1:]
-#         return env[op](*map(deterministic_eval, args))
-#     elif type(exp) is int or type(exp) is float:
-#         # We use torch for all numerical objects in our evaluator
-#         return torch.tensor(float(exp))
-#     else:
-#         raise("Expression type unknown.", exp)
 
 
 class Graph:
@@ -93,7 +88,7 @@ def topsort(verteces,arcs):
     return verteces_topsorted
 
 
-def sample_from_joint(graph,do_log=False):
+def sample_from_joint(graph,sigma=0,do_log=False):
     """This function does ancestral sampling starting from the prior.
 
     graph output from `daphne graph -i sugared.daphne`
@@ -121,17 +116,23 @@ def sample_from_joint(graph,do_log=False):
     for vertex in verteces_topsorted:
         link_function = P[vertex]
         if link_function[0] == 'sample*':
+            if do_log: logger_graph.info('match case sample*: link_function {}'.format(link_function))
             assert len(link_function) == 2
             e = link_function[1]
     #         print('e in as',e)
-            distribution = evaluate(e,local_env = local_env, do_log=do_log)
+            distribution, sigma = evaluate(e,sigma,local_env = local_env, do_log=do_log)
+            if do_log: logger_graph.info('match case sample*: distribution {}, sigma {}'.format(sigma, distribution))
             E = distribution.sample() # now have concrete value. need to pass it as var to evaluate
             update_local_env = {vertex:E}
             local_env.update(update_local_env)
         elif link_function[0] == 'observe*':
-            pass
-            # assert len(link_function) == 3
-            # E = Y[vertex]
+            if do_log: logger_graph.info('match case observe*: link_function {} sigma {}'.format(link_function, sigma))
+            e1, e2 = link_function[1:]
+            d1, sigma = evaluate(e1,sigma,local_env,do_log=do_log)
+            c2, sigma = evaluate(e2,sigma,local_env,do_log=do_log)
+            log_w = d1.log_prob(c2)
+            sigma  = sigma + log_w
+            if do_log: logger_graph.info('match case observe*: d1 {}, c2 {}, log_w {}, sigma {}'.format(d1, c2, log_w, sigma))
         else:
             assert False
         # sampled_graph[vertex] = E
@@ -139,7 +140,7 @@ def sample_from_joint(graph,do_log=False):
     return_of_graph = graph[2] # meaning of program, but need to evaluate
     # if do_log: print('sample_from_joint local_env',local_env)
     # if do_log: print('sample_from_joint sampled_graph',sampled_graph)
-    return evaluate(return_of_graph,local_env = sampled_graph, do_log=do_log)
+    return evaluate(return_of_graph,sigma, local_env = sampled_graph, do_log=do_log)
 
 
 def get_stream(graph):
