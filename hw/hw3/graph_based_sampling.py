@@ -88,7 +88,17 @@ def topsort(verteces,arcs):
     return verteces_topsorted
 
 
-def sample_from_joint(graph,sigma=0,do_log=False):
+def sample_from_joint_precompute(graph):
+    """factor out topological sort. 
+    sufficiently quivalent (although not unique) for the same graph, so no need to recompute."""
+    G = graph[1]
+    verteces = G['V']
+    arcs = G['A']
+    verteces_topsorted = topsort(verteces, arcs)
+    return verteces_topsorted
+
+
+def sample_from_joint(graph,sigma=0,do_log=False,verteces_topsorted=None):
     """This function does ancestral sampling starting from the prior.
 
     graph output from `daphne graph -i sugared.daphne`
@@ -108,7 +118,10 @@ def sample_from_joint(graph,sigma=0,do_log=False):
     G = graph[1]
     verteces = G['V']
     arcs = G['A']
-    verteces_topsorted = topsort(verteces, arcs)
+    if verteces_topsorted is None:
+        verteces_topsorted = topsort(verteces, arcs)
+    else:
+        assert set(verteces) == set(verteces_topsorted)
     P = G['P']
     Y = G['Y']
     sampled_graph = {}
@@ -143,7 +156,8 @@ def sample_from_joint(graph,sigma=0,do_log=False):
     return_of_graph = graph[2] # meaning of program, but need to evaluate
     # if do_log: print('sample_from_joint local_env',local_env)
     # if do_log: print('sample_from_joint sampled_graph',sampled_graph)
-    return evaluate(return_of_graph,sigma, local_env = sampled_graph, do_log=do_log)
+    E = evaluate(return_of_graph,sigma, local_env = sampled_graph, do_log=do_log)
+    return E, sampled_graph
 
 
 def get_stream(graph):
@@ -153,7 +167,7 @@ def get_stream(graph):
     Returns: a python iterator with an infinite stream of samples
         """
     while True:
-        yield sample_from_joint(graph).item()
+        yield sample_from_joint(graph).item() # TODO: modify with new return from sample_from_joint
 
 
 #Testing:
