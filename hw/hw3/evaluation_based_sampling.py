@@ -50,13 +50,21 @@ def evaluate_program(ast,sigma=0,do_log=False):
 #     return distribution.log_prob(value_of_rv)
 
 
+def score(distribution,c):
+    if isinstance(c,bool) or c.type() in ['torch.BoolTensor', 'torch.LongTensor']:
+        log_w = distribution.log_prob(c.double())
+    else:
+        log_w = distribution.log_prob(c)
+    return log_w
+
 number = (int,float)
-def evaluate(e,sigma=0,local_env={},defn_d={},do_log=False):
+def evaluate(e,sigma=0,local_env={},defn_d={},do_log=False,logger_string=''):
     # TODO: get local_env to evaluate values to tensors, not regular floats
     # remember to return evaluate (recursive)
     # everytime we call evaluate, we have to use local_env, otherwise it gets overwritten with the default {}
-    if do_log: logger.info('local_env {}, sigma {}'.format(local_env, sigma))
-    if do_log: logger.info('e {}, sigma {}'.format(e, sigma))
+    # if do_log: logger.info('logger_string {}'.format(logger_string))
+    if do_log: logger.info('ls {}'.format(logger_string))
+    if do_log: logger.info('e {}, local_env {}, sigma {}'.format(e, local_env, sigma))
 
     # get first expression out of list or list of one
     if not isinstance(e,list) or len(e) == 1:
