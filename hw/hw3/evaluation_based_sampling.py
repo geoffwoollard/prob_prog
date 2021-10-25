@@ -57,6 +57,7 @@ def score(distribution,c):
         log_w = distribution.log_prob(c)
     return log_w
 
+
 number = (int,float)
 def evaluate(e,sigma=0,local_env={},defn_d={},do_log=False,logger_string=''):
     # TODO: get local_env to evaluate values to tensors, not regular floats
@@ -109,10 +110,11 @@ def evaluate(e,sigma=0,local_env={},defn_d={},do_log=False,logger_string=''):
         e1, e2 = e[1:]
         d1, sigma = evaluate(e1,sigma,local_env,defn_d,do_log=do_log)
         c2, sigma = evaluate(e2,sigma,local_env,defn_d,do_log=do_log)
-        if isinstance(c2,bool) or c2.type() in ['torch.BoolTensor', 'torch.LongTensor']:
-            log_w = d1.log_prob(c2.double())
-        else:
-            log_w = d1.log_prob(c2)
+        log_w =score(d1,c2)
+        # if isinstance(c2,bool) or c2.type() in ['torch.BoolTensor', 'torch.LongTensor']:
+        #     log_w = d1.log_prob(c2.double())
+        # else:
+        #     log_w = d1.log_prob(c2)
         if do_log: logger.info('match case observe: d1 {}, c2 {}, log_w {}, sigma {}'.format(e,d1, c2, log_w, sigma))
         sigma += log_w
         return c2, sigma

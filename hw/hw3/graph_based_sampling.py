@@ -10,7 +10,7 @@ from daphne import daphne
 
 # from primitives import funcprimitives #TODO
 from tests import is_tol, run_prob_test,load_truth
-from evaluation_based_sampling import evaluate
+from evaluation_based_sampling import evaluate, score
 
 logging.basicConfig(format='%(levelname)s:%(message)s')
 logger_graph = logging.getLogger('simple_example')
@@ -143,10 +143,11 @@ def sample_from_joint(graph,sigma=0,do_log=False,verteces_topsorted=None):
             e1, e2 = link_function[1:]
             d1, sigma = evaluate(e1,sigma,local_env,do_log=do_log)
             c2, sigma = evaluate(e2,sigma,local_env,do_log=do_log)
-            if isinstance(c2,bool) or c2.type() in ['torch.BoolTensor', 'torch.LongTensor']:
-                log_w = d1.log_prob(c2.double())
-            else:
-                log_w = d1.log_prob(c2)
+            log_w = score(d1,c2)
+            # if isinstance(c2,bool) or c2.type() in ['torch.BoolTensor', 'torch.LongTensor']:
+            #     log_w = d1.log_prob(c2.double())
+            # else:
+            #     log_w = d1.log_prob(c2)
             sigma  += log_w
             if do_log: logger_graph.info('match case observe*: d1 {}, c2 {}, log_w {}, sigma {}'.format(d1, c2, log_w, sigma))
         else:

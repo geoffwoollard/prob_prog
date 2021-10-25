@@ -1,6 +1,6 @@
 import torch
 
-from evaluation_based_sampling import evaluate
+from evaluation_based_sampling import evaluate, score
 from graph_based_sampling import sample_from_joint
 from graph_based_sampling import sample_from_joint_precompute
 
@@ -18,8 +18,10 @@ def accept(vertex,local_env,local_env_prime,A,P,do_log):
         d_p = evaluate(P[observed_vertex][1],local_env = local_env,do_log=do_log)[0]
         if do_log: evaluate(1,do_log=do_log,logger_string='d_p {}'.format(d_p))
         if do_log: evaluate(1,do_log=do_log,logger_string='local_env_prime {}, observed_vertex {}, local_env_prime[observed_vertex] {}'.format(local_env_prime,observed_vertex,local_env_prime[observed_vertex]))
-        log_a += d_p_prime.log_prob(local_env_prime[observed_vertex])
-        log_a -= d_p.log_prob(local_env[observed_vertex])
+        log_a += score(d_p_prime,local_env_prime[observed_vertex])
+        # log_a += d_p_prime.log_prob(local_env_prime[observed_vertex])
+        log_a -= score(d_p,local_env[observed_vertex])
+        # log_a -= d_p.log_prob(local_env[observed_vertex])
 
     return torch.exp(log_a)
 
