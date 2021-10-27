@@ -242,6 +242,17 @@ def run_probabilistic_tests():
     print('All probabilistic tests passed')    
 
 
+def evaluate_program_return_from_samples_whole_graph(graph,samples_whole_graph):
+    # evaluate samples (on whatever function, here the return of the program) as needed
+    e = graph[2]
+    # TODO suggest daphne put return as program, so return is ['sample2'] not 'sample2'
+    if isinstance(e,str):
+        e = [e]
+    return_list = []
+    for X_s in samples_whole_graph:
+        return_s, _ = evaluate(e,local_env = X_s) # TODO: handle defns
+        return_list.append(return_s)
+    return return_list
         
         
 if __name__ == '__main__':

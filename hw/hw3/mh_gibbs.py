@@ -3,6 +3,7 @@ import torch
 from evaluation_based_sampling import evaluate, score
 from graph_based_sampling import sample_from_joint
 from graph_based_sampling import sample_from_joint_precompute
+from graph_based_sampling import evaluate_program_return_from_samples_whole_graph
 
 def accept(vertex,local_env,local_env_prime,A,P,do_log):
     link_function = P[vertex]
@@ -48,7 +49,7 @@ def gibbs(num_steps,local_env,P,A,X,do_log):
     return local_env_list
 
 
-def mh_gibbs_wrapper(graph,num_steps,do_log):
+def mh_gibbs_wrapper(graph,num_steps,do_log=False):
     G = graph[1]
     verteces = G['V']
     A = G['A']
@@ -65,5 +66,9 @@ def mh_gibbs_wrapper(graph,num_steps,do_log):
 
     local_env_list = gibbs(num_steps,local_env,P,A,X,do_log=do_log)
 
-    local_env_list = local_env_list0 + local_env_list
-    return local_env_list
+    samples_whole_graph = local_env_list0 + local_env_list
+
+    return_list = evaluate_program_return_from_samples_whole_graph(graph,samples_whole_graph)
+   
+
+    return return_list, samples_whole_graph
