@@ -3,9 +3,10 @@ van de Meent, J.-W., Paige, B., Yang, H., & Wood, F. (2018).
 An Introduction to Probabilistic Programming, XX(Xx), 1–221. 
 http://doi.org/10.1561/XXXXXXXXXX
 
-Acknowledgements to Yuan T https://github.com/yuant95/CPSC532W/blob/master/CS532-HW2/evaluation_based_sampling.py
-and 
+Acknowledgements to 
+Yuan T https://github.com/yuant95/CPSC532W/blob/master/CS532-HW2/evaluation_based_sampling.py
 Masoud Mokhtari https://github.com/MasoudMo/CPSC-532W/blob/master/HW2/evaluation_based_sampling.py
+Mohamad Amin Mohamadi https://github.com/mohamad-amin/CPSC-532W
 """
 
 import os
