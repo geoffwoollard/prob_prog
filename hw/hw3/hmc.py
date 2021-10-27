@@ -158,7 +158,7 @@ def compute_H(X,R,M,Y,P):
     return energy_H
 
 
-def compute_U(X,Y,P):
+def compute_log_joint_prob(X,Y,P):
     """
     call link functions under context and score.
     TODO: remove Y dependence
@@ -176,8 +176,13 @@ def compute_U(X,Y,P):
         e = P[Y_vertex][1]
         distribution = evaluate(e,local_env=X)[0]
         log_prob += score(distribution,Y[Y_vertex])
-    energy_U = -log_prob
-    return energy_U
+    
+    return log_prob
+
+
+def compute_U(X,Y,P):
+    energy_U = -compute_log_joint_prob(X,Y,P)
+    return energy_U 
         
 
 def compute_K(R,M):
