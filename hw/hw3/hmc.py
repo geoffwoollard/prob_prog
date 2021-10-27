@@ -164,9 +164,15 @@ def compute_U(X,Y,P):
         # 'sample2': ['sample*', ['normal', 1, ['sqrt', 5]]]
         # 'observe3': ['observe*', ['normal', 'sample2', ['sqrt', 2]], 8],
     """
-    log_prob = 0
-    verteces_topsorted = P.keys()
-    X, log_prob = evaluate_link_function(P,verteces_topsorted,sigma=0,local_env=X,do_grad=True,do_log=False)
+    log_prob = tensor(0.0)
+    for X_vertex in X.keys():
+        e = P[X_vertex][1]
+        distribution = evaluate(e,local_env=X)[0]
+        log_prob += score(distribution,X[X_vertex])
+    for Y_vertex in Y.keys():
+        e = P[Y_vertex][1]
+        distribution = evaluate(e,local_env=X)[0]
+        log_prob += score(distribution,Y[Y_vertex])
     energy_U = -log_prob
     return energy_U
         

@@ -98,7 +98,7 @@ def sample_from_joint_precompute(graph):
     verteces_topsorted = topsort(verteces, arcs)
     return verteces_topsorted
 
-def evaluate_link_function(P,verteces_topsorted,sigma,local_env,do_grad,do_log):
+def evaluate_link_function(P,verteces_topsorted,sigma,local_env,do_log):
     for vertex in verteces_topsorted:
         link_function = P[vertex]
         if link_function[0] == 'sample*':
@@ -109,7 +109,6 @@ def evaluate_link_function(P,verteces_topsorted,sigma,local_env,do_grad,do_log):
             distribution, sigma = evaluate(e,sigma,local_env = local_env, do_log=do_log)
             if do_log: logger_graph.info('match case sample*: distribution {}, sigma {}'.format(sigma, distribution))
             E = distribution.sample() # now have concrete value. need to pass it as var to evaluate
-            #if do_grad: E.requires_grad = True
             update_local_env = {vertex:E}
             local_env.update(update_local_env)
         elif link_function[0] == 'observe*':
@@ -117,7 +116,6 @@ def evaluate_link_function(P,verteces_topsorted,sigma,local_env,do_grad,do_log):
             e1, e2 = link_function[1:]
             d1, sigma = evaluate(e1,sigma,local_env,do_log=do_log)
             c2, sigma = evaluate(e2,sigma,local_env,do_log=do_log)
-            #if do_grad: c2.requires_grad = True
             log_w = score(d1,c2)
             # if isinstance(c2,bool) or c2.type() in ['torch.BoolTensor', 'torch.LongTensor']:
             #     log_w = d1.log_prob(c2.double())
@@ -130,7 +128,7 @@ def evaluate_link_function(P,verteces_topsorted,sigma,local_env,do_grad,do_log):
 
     return local_env, sigma
 
-def sample_from_joint(graph,sigma=tensor(0.),do_grad=False,do_log=False,verteces_topsorted=None):
+def sample_from_joint(graph,sigma=tensor(0.),do_log=False,verteces_topsorted=None):
     """This function does ancestral sampling starting from the prior.
 
     graph output from `daphne graph -i sugared.daphne`
@@ -158,7 +156,7 @@ def sample_from_joint(graph,sigma=tensor(0.),do_grad=False,do_log=False,verteces
     Y = G['Y']
     sampled_graph = {}
     local_env = {}
-    local_env, sigma = evaluate_link_function(P,verteces_topsorted,sigma,local_env,do_grad=do_grad,do_log=do_log)
+    local_env, sigma = evaluate_link_function(P,verteces_topsorted,sigma,local_env,do_log=do_log)
 
     sampled_graph = local_env
     return_of_graph = graph[2] # meaning of program, but need to evaluate
