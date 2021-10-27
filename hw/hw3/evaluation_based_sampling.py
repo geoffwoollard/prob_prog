@@ -46,11 +46,10 @@ def evaluate_program(ast,sigma=0,do_log=False):
         assert False
     return res, sigma
 
-# def log_prob(distribution, value_of_rv):
-#     return distribution.log_prob(value_of_rv)
-
 
 def score(distribution,c):
+    """Score pytorch distributions with .log_prob, but in a robust way for the type of c
+    """
     if isinstance(c,bool) or c.type() in ['torch.BoolTensor', 'torch.LongTensor']:
         log_w = distribution.log_prob(c.double())
     else:
@@ -111,10 +110,6 @@ def evaluate(e,sigma=0,local_env={},defn_d={},do_log=False,logger_string=''):
         d1, sigma = evaluate(e1,sigma,local_env,defn_d,do_log=do_log)
         c2, sigma = evaluate(e2,sigma,local_env,defn_d,do_log=do_log)
         log_w =score(d1,c2)
-        # if isinstance(c2,bool) or c2.type() in ['torch.BoolTensor', 'torch.LongTensor']:
-        #     log_w = d1.log_prob(c2.double())
-        # else:
-        #     log_w = d1.log_prob(c2)
         if do_log: logger.info('match case observe: d1 {}, c2 {}, log_w {}, sigma {}'.format(e,d1, c2, log_w, sigma))
         sigma += log_w
         return c2, sigma
@@ -165,90 +160,8 @@ def evaluate(e,sigma=0,local_env={},defn_d={},do_log=False,logger_string=''):
         else:
             assert False, 'not implemented'
 
-def get_stream(ast):
-    """Return a stream of prior samples"""
-    while True:
-        yield evaluate_program(ast,do_log=False)[0].item() # just return value, not context
-
-
-def run_deterministic_tests():
-    
-    tot=0
-    for i in range(1,14):
-        os.chdir('/Users/gw/repos/prob_prog/hw/hw2/CS532-HW2/')
-        sugared_fname = '../prob_prog/hw/hw2/CS532-HW2/programs/tests/deterministic/test_{}.daphne'.format(i)
-        desugared_ast_json_fname = '/Users/gw/repos/prob_prog/' + sugared_fname.replace('.daphne','.json')
-        if os.path.isfile(desugared_ast_json_fname):
-            with open(desugared_ast_json_fname) as f:
-                ast = json.load(f)
-        else:
-            #note: the sugared path that goes into daphne desugar should be with respect to the daphne path!
-            ast = daphne(['desugar', '-i', sugared_fname])
-            with open(desugared_ast_json_fname, 'w') as f:
-                json.dump(ast, f) 
-        truth = load_truth('programs/tests/deterministic/test_{}.truth'.format(i))
-        ret, sig = evaluate_program(ast)
-        try:
-            assert(is_tol(ret, truth))
-            tot += 1
-        except AssertionError:
-            raise AssertionError('return value {} is not equal to truth {} for exp {}'.format(ret,truth,ast))
-        
-        print('Test %i passed'%i)
-        
-    print('All {} deterministic tests passed'.format(i))
     
 
-
-def run_probabilistic_tests():
-    
-    num_samples=1e4
-    max_p_value = 1e-4
-    
-    for i in range(1,7):
-        os.chdir('/Users/gw/repos/prob_prog/hw/hw2/CS532-HW2/')
-        sugared_fname = '../prob_prog/hw/hw2/CS532-HW2/programs/tests/probabilistic/test_{}.daphne'.format(i)
-        desugared_ast_json_fname = '/Users/gw/repos/prob_prog/' + sugared_fname.replace('.daphne','.json')
-        if os.path.isfile(desugared_ast_json_fname):
-            with open(desugared_ast_json_fname) as f:
-                ast = json.load(f)
-        else:
-            # TODO: put in write json
-            #note: the sugared path that goes into daphne desugar should be with respect to the daphne path!
-            ast = daphne(['desugar', '-i', sugared_fname]) 
-            with open(desugared_ast_json_fname, 'w') as f:
-                json.dump(ast, f) 
-        truth = load_truth('programs/tests/probabilistic/test_{}.truth'.format(i))
-        
-        stream = get_stream(ast)
-        
-        p_val = run_prob_test(stream, truth, num_samples)
-        
-        print('p value', p_val)
-        assert(p_val > max_p_value)
-    
-    print('All probabilistic tests passed')    
+ 
 
         
-if __name__ == '__main__':
-
-    run_deterministic_tests()
-    
-    run_probabilistic_tests()
-
-
-    for i in range(1,5):
-        os.chdir('/Users/gw/repos/prob_prog/hw/hw2/CS532-HW2/')
-        sugared_fname = '../prob_prog/hw/hw2/CS532-HW2/programs/{}.daphne'.format(i)
-        desugared_ast_json_fname = '/Users/gw/repos/prob_prog/' + sugared_fname.replace('.daphne','.json')
-        if os.path.isfile(desugared_ast_json_fname):
-            with open(desugared_ast_json_fname) as f:
-                ast = json.load(f)
-        else:
-            #note: the sugared path that goes into daphne desugar should be with respect to the daphne path!
-            ast = daphne(['desugar', '-i', sugared_fname]) 
-            with open(desugared_ast_json_fname, 'w') as f:
-                json.dump(ast, f)
-
-        print('\n\n\nSample of prior of program {}:'.format(i))
-        print(evaluate_program(ast)[0])

@@ -196,7 +196,6 @@ primitives_d = {
     '<=':le_primitive,
     '=':eq_primitive,
     'rest' : rest_primative,
-    # '_':freshvar_primitive,
     'mat-transpose': lambda a: a[0].T,
     'mat-tanh': tanh_primitive,
     'mat-mul': lambda a: torch.matmul(a[0],a[1]),
