@@ -1,0 +1,6 @@
+[["let", 
+	["mu", ["sample", ["normal", 1, ["sqrt", 5]]]], 
+	["let", ["sigma", ["sqrt", 2]], 
+		["let", ["lik", ["normal", "mu", "sigma"]], 
+			["let", ["dontcare0", ["observe", "lik", 8]], 
+				["let", ["dontcare1", ["observe", "lik", 9]], "mu"]]]]]]

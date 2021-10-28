@@ -1,0 +1,8 @@
+[["defn", 
+	"observe-data", 
+	["_", "data", "slope", "bias"], 
+	["let", ["xn", ["first", "data"]], 
+		["let", ["yn", ["second", "data"]], 
+			["let", ["zn", ["+", ["*", "slope", "xn"], "bias"]], 
+				["let", ["dontcare0", ["observe", ["normal", "zn", 1.0], "yn"]], ["rest", ["rest", "data"]]]]]]], 
+["let", ["slope", ["sample", ["normal", 0.0, 10.0]]], ["let", ["bias", ["sample", ["normal", 0.0, 10.0]]], ["let", ["data", ["vector", 1.0, 2.1, 2.0, 3.9, 3.0, 5.3, 4.0, 7.7, 5.0, 10.2, 6.0, 12.9]], ["let", ["dontcare1", ["let", ["a2", "slope"], ["let", ["a3", "bias"], ["let", ["acc4", ["observe-data", 0, "data", "a2", "a3"]], ["let", ["acc5", ["observe-data", 1, "acc4", "a2", "a3"]], ["let", ["acc6", ["observe-data", 2, "acc5", "a2", "a3"]], ["let", ["acc7", ["observe-data", 3, "acc6", "a2", "a3"]], ["let", ["acc8", ["observe-data", 4, "acc7", "a2", "a3"]], ["let", ["acc9", ["observe-data", 5, "acc8", "a2", "a3"]], "acc9"]]]]]]]]], ["vector", "slope", "bias"]]]]]]

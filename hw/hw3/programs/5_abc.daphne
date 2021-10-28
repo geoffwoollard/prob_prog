@@ -1,0 +1,4 @@
+(let [x (sample (normal 0 10))
+      y (sample (normal 0 10))]
+  (observe (normal (+ x y) .1) 7)
+  [x y])

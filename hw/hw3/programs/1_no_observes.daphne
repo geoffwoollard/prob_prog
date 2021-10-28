@@ -1,0 +1,4 @@
+(let [mu (sample (normal 1 (sqrt 5)))
+           sigma (sqrt 2)
+           lik (normal mu sigma)]
+       mu)

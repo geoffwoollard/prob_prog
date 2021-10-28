@@ -1,0 +1,22 @@
+(let [sprinkler true
+      wet-grass true
+      is-cloudy (sample (flip 0.5))
+
+      is-raining (if (= is-cloudy true )
+                    (sample (flip 0.8))
+                    (sample (flip 0.2)))
+      sprinkler-dist (if (= is-cloudy true)
+                        (flip 0.1)
+                        (flip 0.5))
+      wet-grass-dist (if (and (= sprinkler true)
+                              (= is-raining true))
+                        (flip 0.99)
+                        (if (and (= sprinkler false)
+                                 (= is-raining false))
+                          (flip 0.0)
+                          (if (or (= sprinkler true)
+                                  (= is-raining true))
+                            (flip 0.9))))]
+  (observe sprinkler-dist sprinkler)
+  (observe wet-grass-dist wet-grass)
+  is-raining)
