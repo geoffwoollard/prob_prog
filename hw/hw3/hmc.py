@@ -6,7 +6,7 @@ from evaluation_based_sampling import evaluate
 from graph_based_sampling import sample_from_joint, score
 
 
-def hmc_wrapper(graph,num_samples):
+def hmc_wrapper(graph,num_samples,T=10,epsilon=0.1,M=tensor(1.)):
     #set up X, Y list of verteces
     G = graph[1]
     verteces = ['V']
@@ -26,11 +26,6 @@ def hmc_wrapper(graph,num_samples):
     # set up autograd on tensors
     turn_on_autodiff(X0)
     turn_on_autodiff(Y) # TODO: why do we need this?
-    
-    # set up hyper params, T, epsilon, M
-    T = 10
-    M = tensor(1.)
-    epsilon = 0.1
 
     
     # run HMC algorithm 20 from book
