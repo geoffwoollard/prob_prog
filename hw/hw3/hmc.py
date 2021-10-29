@@ -73,6 +73,8 @@ def leapfrog(X0,R0,T,epsilon,Y,P,X_vertex_names_to_idx_d):
     """
     leapfrog as in algo 19 of book
     Y and P needed for grad calc
+    # TODO: bug for mass matrix on Xt update equations. M_inverse
+
     """
     
     epsilon_2 = epsilon/2
