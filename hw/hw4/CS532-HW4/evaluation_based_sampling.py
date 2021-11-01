@@ -14,6 +14,7 @@ import json
 import logging
 
 import torch
+from torch import tensor
 
 from daphne import daphne
 from primitives import primitives_d, distributions_d, number, distribution_types
@@ -58,7 +59,7 @@ def score(distribution,c):
 
 
 number = (int,float)
-def eval_algo11(e,sigma=0,local_env={},defn_d={},do_log=False,logger_string=''):
+def eval_algo11(e,sigma={'log_w':tensor(0.)},local_env={},defn_d={},do_log=False,logger_string=''):
     # remember to return evaluate (recursive)
         # everytime we call evaluate, we have to use local_env, otherwise it gets overwritten with the default {}
     if do_log: logger.info('ls {}'.format(logger_string))
@@ -89,7 +90,7 @@ def eval_algo11(e,sigma=0,local_env={},defn_d={},do_log=False,logger_string=''):
         elif e in local_env.keys():
             if do_log: logger.info('match case local_env: e {}, sigma {}'.format(e, sigma))
             if do_log: logger.info('match case local_env: local_env[e] {}'.format(local_env[e]))
-            return local_env[e], sigma # TODO return evaluate?
+            return local_env[e], sigma 
         elif e in list(defn_d.keys()):
             if do_log: logger.info('match case defn_d: e {}, sigma {}'.format(e, sigma))
             return e, sigma
@@ -101,7 +102,12 @@ def eval_algo11(e,sigma=0,local_env={},defn_d={},do_log=False,logger_string=''):
     elif e[0] == 'sample':
         if do_log: logger.info('match case sample: e {}, sigma {}'.format(e,sigma))
         distribution, sigma = eval_algo11(e[1],sigma,local_env,defn_d,do_log=do_log)
-        return distribution.sample(), sigma # match shape in number base case
+        constant = distribution.sample()
+        # grad log prob
+        log_wv = score(distribution,constant)
+        sigma['log_w'] += log_wv
+
+        return constant, sigma # match shape in number base case
     elif e[0] == 'observe':
         if do_log: logger.info('match case observe: e {}, sigma {}'.format(e,sigma))
         e1, e2 = e[1:]
@@ -109,7 +115,7 @@ def eval_algo11(e,sigma=0,local_env={},defn_d={},do_log=False,logger_string=''):
         c2, sigma = eval_algo11(e2,sigma,local_env,defn_d,do_log=do_log)
         log_w =score(d1,c2)
         if do_log: logger.info('match case observe: d1 {}, c2 {}, log_w {}, sigma {}'.format(e,d1, c2, log_w, sigma))
-        sigma += log_w
+        sigma['log_w'] += log_w
         return c2, sigma
     elif e[0] == 'let': 
         if do_log: logger.info('match case let: e {}, sigma {}'.format(e, sigma))
