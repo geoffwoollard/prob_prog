@@ -16,7 +16,6 @@ import logging
 import torch
 
 from daphne import daphne
-from tests import is_tol, run_prob_test,load_truth
 from primitives import primitives_d, distributions_d, number, distribution_types
 
 
@@ -60,10 +59,8 @@ def score(distribution,c):
 
 number = (int,float)
 def evaluate(e,sigma=0,local_env={},defn_d={},do_log=False,logger_string=''):
-    # TODO: get local_env to evaluate values to tensors, not regular floats
     # remember to return evaluate (recursive)
-    # everytime we call evaluate, we have to use local_env, otherwise it gets overwritten with the default {}
-    # if do_log: logger.info('logger_string {}'.format(logger_string))
+        # everytime we call evaluate, we have to use local_env, otherwise it gets overwritten with the default {}
     if do_log: logger.info('ls {}'.format(logger_string))
     if do_log: logger.info('e {}, local_env {}, sigma {}'.format(e, local_env, sigma))
 
