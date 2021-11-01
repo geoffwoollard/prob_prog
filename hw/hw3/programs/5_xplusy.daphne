@@ -1,3 +1,3 @@
-(let [x_plus_y  (normal 0 14.1421356)]
+(let [x_plus_y  (normal 0 14.1421356)pro  ]
   (observe x_plus_y 7)
-  x_plus_y)
+  sample x_plus_y)
