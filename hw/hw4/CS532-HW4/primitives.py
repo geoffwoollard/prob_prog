@@ -20,6 +20,7 @@ distribution_types = (
     torch.distributions.Categorical,
     torch.distributions.bernoulli.Bernoulli,
     torch.distributions.dirichlet.Dirichlet,
+    torch.distributions.dirichlet.Gamma,
     )
 
 
