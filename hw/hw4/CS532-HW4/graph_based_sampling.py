@@ -9,18 +9,11 @@ import torch.distributions as dist
 
 from daphne import daphne
 
-# from primitives import funcprimitives #TODO
-from tests import is_tol, run_prob_test,load_truth
 from evaluation_based_sampling import evaluate, score
 
 logging.basicConfig(format='%(levelname)s:%(message)s')
 logger_graph = logging.getLogger('simple_example')
 logger_graph.setLevel(logging.DEBUG)
-
-# Put all function mappings from the deterministic language environment to your
-# Python evaluation context here:
-env = {'normal': dist.Normal,
-       'sqrt': torch.sqrt}
 
 
 def deterministic_eval(exp):
@@ -67,6 +60,7 @@ class Graph:
 
         self.topsorted = stack
 
+
 def topsort(verteces,arcs):
     """Toplogical sort Daphne Graph.
 
@@ -98,6 +92,7 @@ def sample_from_joint_precompute(graph):
     verteces_topsorted = topsort(verteces, arcs)
     return verteces_topsorted
 
+
 def evaluate_link_function(P,verteces_topsorted,sigma,local_env,do_log):
     for vertex in verteces_topsorted:
         link_function = P[vertex]
@@ -105,7 +100,6 @@ def evaluate_link_function(P,verteces_topsorted,sigma,local_env,do_log):
             if do_log: logger_graph.info('match case sample*: link_function {}'.format(link_function))
             assert len(link_function) == 2
             e = link_function[1]
-    #         print('e in as',e)
             distribution, sigma = evaluate(e,sigma,local_env = local_env, do_log=do_log)
             if do_log: logger_graph.info('match case sample*: distribution {}, sigma {}'.format(sigma, distribution))
             E = distribution.sample() # now have concrete value. need to pass it as var to evaluate
@@ -117,16 +111,13 @@ def evaluate_link_function(P,verteces_topsorted,sigma,local_env,do_log):
             d1, sigma = evaluate(e1,sigma,local_env,do_log=do_log)
             c2, sigma = evaluate(e2,sigma,local_env,do_log=do_log)
             log_w = score(d1,c2)
-            # if isinstance(c2,bool) or c2.type() in ['torch.BoolTensor', 'torch.LongTensor']:
-            #     log_w = d1.log_prob(c2.double())
-            # else:
-            #     log_w = d1.log_prob(c2)
             sigma  += log_w
             if do_log: logger_graph.info('match case observe*: d1 {}, c2 {}, log_w {}, sigma {}'.format(d1, c2, log_w, sigma))
         else:
             assert False
 
     return local_env, sigma
+
 
 def sample_from_joint(graph,sigma=tensor(0.),do_log=False,verteces_topsorted=None):
     """This function does ancestral sampling starting from the prior.
@@ -166,82 +157,6 @@ def sample_from_joint(graph,sigma=tensor(0.),do_log=False,verteces_topsorted=Non
     return E, sampled_graph
 
 
-def get_stream(graph):
-    """Return a stream of prior samples
-    Args: 
-        graph: json graph as loaded by daphne wrapper
-    Returns: a python iterator with an infinite stream of samples
-        """
-    while True:
-        yield sample_from_joint(graph).item() # TODO: modify with new return from sample_from_joint
-
-
-#Testing:
-
-def run_deterministic_tests():
-    
-    tot=0
-    for i in range(1,13): # TODO: vector returns
-        os.chdir('/Users/gw/repos/prob_prog/hw/hw2/CS532-HW2/')
-
-        #note: this path should be with respect to the daphne path!
-        sugared_fname = '../prob_prog/hw/hw2/CS532-HW2/programs/tests/deterministic/test_{}.daphne'.format(i)
-        
-        graph_json_fname = '/Users/gw/repos/prob_prog/' + sugared_fname.replace('.daphne','_graph.json')
-        if os.path.isfile(graph_json_fname):
-            with open(graph_json_fname) as f:
-                graph = json.load(f)
-        else:
-            #note: the sugared path that goes into daphne desugar should be with respect to the daphne path!
-            graph = daphne(['graph', '-i', sugared_fname]) 
-            with open(graph_json_fname, 'w') as f:
-                json.dump(graph, f)
-
-        
-        truth = load_truth('programs/tests/deterministic/test_{}.truth'.format(i))
-        ret = deterministic_eval(graph[-1])
-        try:
-            assert(is_tol(ret, truth))
-            tot += 1
-        except AssertionError:
-            raise AssertionError('return value {} is not equal to truth {} for graph {}'.format(ret,truth,graph))
-        
-        print('Test passed')
-        
-    print('All {} deterministic tests passed'.format(tot))
-    
-
-
-def run_probabilistic_tests():
-    
-    #TODO: 
-    num_samples=1e4
-    max_p_value = 1e-4
-    
-    for i in range(1,7):
-        os.chdir('/Users/gw/repos/prob_prog/hw/hw2/CS532-HW2/')
-        sugared_fname = '../prob_prog/hw/hw2/CS532-HW2/programs/tests/probabilistic/test_{}.daphne'.format(i)
-        graph_json_fname = '/Users/gw/repos/prob_prog/' + sugared_fname.replace('.daphne','_graph.json')
-        if os.path.isfile(graph_json_fname):
-            with open(graph_json_fname) as f:
-                graph = json.load(f)
-        else:
-            #note: the sugared path that goes into daphne desugar should be with respect to the daphne path!
-            graph = daphne(['graph', '-i', sugared_fname]) 
-            with open(graph_json_fname, 'w') as f:
-                json.dump(graph, f)
-        
-        truth = load_truth('programs/tests/probabilistic/test_{}.truth'.format(i)) 
-        stream = get_stream(graph)
-        
-        p_val = run_prob_test(stream, truth, num_samples)
-        
-        print('p value', p_val)
-        assert(p_val > max_p_value)
-    
-    print('All probabilistic tests passed')    
-
-
 def evaluate_program_return_from_samples_whole_graph(graph,samples_whole_graph):
     # evaluate samples (on whatever function, here the return of the program) as needed
     e = graph[2]
@@ -254,30 +169,6 @@ def evaluate_program_return_from_samples_whole_graph(graph,samples_whole_graph):
         return_list.append(return_s)
     return return_list
         
-        
-if __name__ == '__main__':
-    
-
-    run_deterministic_tests()
-    run_probabilistic_tests()
-
-
-
-
-    for i in range(1,5):
-        # graph = daphne(['graph','-i','../CS532-HW2/programs/{}.daphne'.format(i)])
-        os.chdir('/Users/gw/repos/prob_prog/hw/hw2/CS532-HW2/')
-        sugared_fname = '../prob_prog/hw/hw2/CS532-HW2/programs/{}.daphne'.format(i)
-        graph_json_fname = '/Users/gw/repos/prob_prog/' + sugared_fname.replace('.daphne','_graph.json')
-        if os.path.isfile(graph_json_fname):
-            with open(graph_json_fname) as f:
-                graph = json.load(f)
-        else:
-            #note: the sugared path that goes into daphne desugar should be with respect to the daphne path!
-            graph = daphne(['graph', '-i', sugared_fname]) 
-            with open(graph_json_fname, 'w') as f:
-                json.dump(graph, f)
-        print('\n\n\nSample of prior of program {}:'.format(i))
-        print(sample_from_joint(graph))    
+          
 
     
