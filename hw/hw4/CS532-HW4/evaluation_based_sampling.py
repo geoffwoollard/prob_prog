@@ -25,7 +25,7 @@ logger = logging.getLogger('simple_example')
 logger.setLevel(logging.DEBUG)
         
 
-def evaluate_program(ast,sigma=0,do_log=False):
+def evaluate_program(ast,sigma,do_log=False):
     """Evaluate a program as desugared by daphne, generate a sample from the prior
     Args:
         ast: json FOPPL program
@@ -59,7 +59,7 @@ def score(distribution,c):
 
 
 number = (int,float)
-def eval_algo11(e,sigma={'log_w':tensor(0.)},local_env={},defn_d={},do_log=False,logger_string=''):
+def eval_algo11(e,sigma,local_env={},defn_d={},do_log=False,logger_string=''):
     # remember to return evaluate (recursive)
         # everytime we call evaluate, we have to use local_env, otherwise it gets overwritten with the default {}
     if do_log: logger.info('ls {}'.format(logger_string))
@@ -102,10 +102,25 @@ def eval_algo11(e,sigma={'log_w':tensor(0.)},local_env={},defn_d={},do_log=False
     elif e[0] == 'sample':
         if do_log: logger.info('match case sample: e {}, sigma {}'.format(e,sigma))
         distribution, sigma = eval_algo11(e[1],sigma,local_env,defn_d,do_log=do_log)
-        constant = distribution.sample()
-        # grad log prob
+        # TODO: initialize proposal using prior
+        if isinstance(d,torch.distributions.normal.Normal):
+            q = distributions.Normal
+        elif isinstance(d,torch.distributions.bernoulli.Bernoulli):
+            q = distributions.Gamma
+        elif isinstance(d,torch.distributions.Gamma): 
+            q = distributions.Bernoulli
+        elif isinstance(d,torch.distributions.Categorical): 
+            q = distributions.Categorical
+        elif isinstance(d,torch.distributions.Dirichlet): 
+            q = distributions.Dirichlet
+        else:
+            assert False, 'no suitable proposal distribution'
+
+        constant = q.sample()
+        log_prob = grad_log_prob(q,c)
+        sigma['grad'] = log_prob
         log_wv = score(distribution,constant)
-        sigma['log_w'] += log_wv
+        sigma['logW'] += log_wv
 
         return constant, sigma # match shape in number base case
     elif e[0] == 'observe':
@@ -115,7 +130,7 @@ def eval_algo11(e,sigma={'log_w':tensor(0.)},local_env={},defn_d={},do_log=False
         c2, sigma = eval_algo11(e2,sigma,local_env,defn_d,do_log=do_log)
         log_w =score(d1,c2)
         if do_log: logger.info('match case observe: d1 {}, c2 {}, log_w {}, sigma {}'.format(e,d1, c2, log_w, sigma))
-        sigma['log_w'] += log_w
+        sigma['logW'] += log_w
         return c2, sigma
     elif e[0] == 'let': 
         if do_log: logger.info('match case let: e {}, sigma {}'.format(e, sigma))
@@ -166,6 +181,9 @@ def eval_algo11(e,sigma={'log_w':tensor(0.)},local_env={},defn_d={},do_log=False
 
     
 
- 
+ def grad_log_prob(distribution_unconst_optim,c):
+    log_prob = distribution_unconst_optim.log_prob(c)
+    log_prob.backward()
+    return log_prob
 
         
