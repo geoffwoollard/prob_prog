@@ -39,9 +39,9 @@ def evaluate_program(ast,sigma=0,do_log=False):
         defn_function_body = ast0[3]
         defn_d[defn_function_name] = [defn_function_args,defn_function_body]
         ast1 = ast[1]
-        res, sigma = evaluate(ast1,sigma,defn_d=defn_d,do_log=do_log)
+        res, sigma = eval_algo11(ast1,sigma,defn_d=defn_d,do_log=do_log)
     elif len(ast) == 1:
-        res, sigma = evaluate(ast0,sigma,defn_d=defn_d,do_log=do_log)
+        res, sigma = eval_algo11(ast0,sigma,defn_d=defn_d,do_log=do_log)
     else:
         assert False
     return res, sigma
@@ -58,7 +58,7 @@ def score(distribution,c):
 
 
 number = (int,float)
-def evaluate(e,sigma=0,local_env={},defn_d={},do_log=False,logger_string=''):
+def eval_algo11(e,sigma=0,local_env={},defn_d={},do_log=False,logger_string=''):
     # remember to return evaluate (recursive)
         # everytime we call evaluate, we have to use local_env, otherwise it gets overwritten with the default {}
     if do_log: logger.info('ls {}'.format(logger_string))
@@ -100,13 +100,13 @@ def evaluate(e,sigma=0,local_env={},defn_d={},do_log=False,logger_string=''):
             assert False, 'case not matched'
     elif e[0] == 'sample':
         if do_log: logger.info('match case sample: e {}, sigma {}'.format(e,sigma))
-        distribution, sigma = evaluate(e[1],sigma,local_env,defn_d,do_log=do_log)
+        distribution, sigma = eval_algo11(e[1],sigma,local_env,defn_d,do_log=do_log)
         return distribution.sample(), sigma # match shape in number base case
     elif e[0] == 'observe':
         if do_log: logger.info('match case observe: e {}, sigma {}'.format(e,sigma))
         e1, e2 = e[1:]
-        d1, sigma = evaluate(e1,sigma,local_env,defn_d,do_log=do_log)
-        c2, sigma = evaluate(e2,sigma,local_env,defn_d,do_log=do_log)
+        d1, sigma = eval_algo11(e1,sigma,local_env,defn_d,do_log=do_log)
+        c2, sigma = eval_algo11(e2,sigma,local_env,defn_d,do_log=do_log)
         log_w =score(d1,c2)
         if do_log: logger.info('match case observe: d1 {}, c2 {}, log_w {}, sigma {}'.format(e,d1, c2, log_w, sigma))
         sigma += log_w
@@ -120,25 +120,25 @@ def evaluate(e,sigma=0,local_env={},defn_d={},do_log=False,logger_string=''):
             # e[2] : e0
         # evaluates e1 to c1 and binds this value to e0
         # this means we update the context with old context plus {v1:c1}
-        c1, sigma = evaluate(e[1][1],sigma,local_env,defn_d,do_log=do_log) # evaluates e1 to c1
+        c1, sigma = eval_algo11(e[1][1],sigma,local_env,defn_d,do_log=do_log) # evaluates e1 to c1
         v1 = e[1][0]
-        return evaluate(e[2], sigma, local_env = {**local_env,v1:c1},defn_d=defn_d,do_log=do_log)
+        return eval_algo11(e[2], sigma, local_env = {**local_env,v1:c1},defn_d=defn_d,do_log=do_log)
     elif e[0] == 'if': # if e0 e1 e2
         if do_log: logger.info('match case if: e {}, sigma {}'.format(e, sigma))
         e1 = e[1]
         e2 = e[2]
         e3 = e[3]
-        e1_prime, sigma = evaluate(e1,sigma,local_env,defn_d,do_log=do_log)
+        e1_prime, sigma = eval_algo11(e1,sigma,local_env,defn_d,do_log=do_log)
         if e1_prime:
-            return evaluate(e2,sigma,local_env,defn_d,do_log=do_log)
+            return eval_algo11(e2,sigma,local_env,defn_d,do_log=do_log)
         else:
-            return evaluate(e3,sigma,local_env,defn_d,do_log=do_log) 
+            return eval_algo11(e3,sigma,local_env,defn_d,do_log=do_log) 
 
     else:
         cs = []
         for ei in e:
             if do_log: logger.info('cycling through expressions: ei {}, sigma {}'.format(ei,sigma))
-            c, sigma = evaluate(ei,sigma,local_env,defn_d,do_log=do_log)
+            c, sigma = eval_algo11(ei,sigma,local_env,defn_d,do_log=do_log)
             cs.append(c)
         if cs[0] in primitives_d:
             if do_log: logger.info('do case primitives_d: cs0 {}'.format(cs[0]))
@@ -154,7 +154,7 @@ def evaluate(e,sigma=0,local_env={},defn_d={},do_log=False,logger_string=''):
             defn_function_args, defn_function_body = defn_function_li
             local_env_update = {key:value for key,value in zip(defn_function_args, cs[1:])}
             if do_log: logger.info('do case defn: update to local_env from defn_d {}'.format(local_env_update))
-            return evaluate(defn_function_body,sigma,local_env = {**local_env, **local_env_update},defn_d=defn_d,do_log=do_log)
+            return eval_algo11(defn_function_body,sigma,local_env = {**local_env, **local_env_update},defn_d=defn_d,do_log=do_log)
         else:
             assert False, 'not implemented'
 
