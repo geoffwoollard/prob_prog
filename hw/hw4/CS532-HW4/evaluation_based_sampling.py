@@ -18,7 +18,7 @@ from torch import tensor
 
 from daphne import daphne
 from primitives import primitives_d, distributions_d, number, distribution_types
-
+import distributions # for unconstrained optimization
 
 logging.basicConfig(format='%(levelname)s:%(message)s')
 logger = logging.getLogger('simple_example')
@@ -59,7 +59,7 @@ def score(distribution,c):
 
 
 number = (int,float)
-def eval_algo11(e,sigma,local_env={},defn_d={},do_log=False,logger_string=''):
+def eval_algo11(e,sigma,local_env={},defn_d={},do_log=False,logger_string='',vertex=None):
     # remember to return evaluate (recursive)
         # everytime we call evaluate, we have to use local_env, otherwise it gets overwritten with the default {}
     if do_log: logger.info('ls {}'.format(logger_string))
@@ -103,23 +103,24 @@ def eval_algo11(e,sigma,local_env={},defn_d={},do_log=False,logger_string=''):
         if do_log: logger.info('match case sample: e {}, sigma {}'.format(e,sigma))
         distribution, sigma = eval_algo11(e[1],sigma,local_env,defn_d,do_log=do_log)
         # TODO: initialize proposal using prior
-        if isinstance(d,torch.distributions.normal.Normal):
-            q = distributions.Normal
-        elif isinstance(d,torch.distributions.bernoulli.Bernoulli):
-            q = distributions.Gamma
-        elif isinstance(d,torch.distributions.Gamma): 
+        if isinstance(distribution,torch.distributions.normal.Normal):
+            q = distributions.Normal(loc=tensor(0.),scale=tensor(1.))
+        elif isinstance(distribution,torch.distributions.bernoulli.Bernoulli):
             q = distributions.Bernoulli
-        elif isinstance(d,torch.distributions.Categorical): 
+        elif isinstance(distribution,torch.distributions.Gamma): 
+            q = distributions.Gamma
+        elif isinstance(distribution,torch.distributions.Categorical): 
             q = distributions.Categorical
-        elif isinstance(d,torch.distributions.Dirichlet): 
+        elif isinstance(distribution,torch.distributions.Dirichlet): 
             q = distributions.Dirichlet
         else:
             assert False, 'no suitable proposal distribution'
 
+        sigma['Q'][vertex] = q
         constant = q.sample()
-        log_prob = grad_log_prob(q,c)
-        sigma['grad'] = log_prob
-        log_wv = score(distribution,constant)
+        G_v = grad_log_prob(q,constant)
+        sigma['grad'][vertex] = G_v
+        log_wv = score(distribution,constant) - score(q,constant)
         sigma['logW'] += log_wv
 
         return constant, sigma # match shape in number base case
@@ -181,9 +182,10 @@ def eval_algo11(e,sigma,local_env={},defn_d={},do_log=False,logger_string=''):
 
     
 
- def grad_log_prob(distribution_unconst_optim,c):
+def grad_log_prob(distribution_unconst_optim,c):
     log_prob = distribution_unconst_optim.log_prob(c)
     log_prob.backward()
-    return log_prob
+    G_v = distribution_unconst_optim.Parameters()
+    return G_v
 
         
