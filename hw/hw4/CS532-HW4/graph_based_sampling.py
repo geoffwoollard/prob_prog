@@ -103,8 +103,9 @@ def evaluate_link_function(P,verteces_topsorted,sigma,local_env,do_log):
             distribution, sigma = evaluate(e,sigma,local_env = local_env, do_log=do_log)
             if do_log: logger_graph.info('match case sample*: distribution {}, sigma {}'.format(sigma, distribution))
             E = distribution.sample() # now have concrete value. need to pass it as var to evaluate
-            update_local_env = {vertex:E}
+            update_local_env = {vertex:E}#{vertex:E, vertex+'_dist':distribution}
             local_env.update(update_local_env)
+            local_env['prior_dist'][vertex] = distribution
         elif link_function[0] == 'observe*':
             if do_log: logger_graph.info('match case observe*: link_function {} sigma {}'.format(link_function, sigma))
             e1, e2 = link_function[1:]
@@ -147,7 +148,7 @@ def sample_from_joint(graph,sigma=tensor(0.),do_log=False,verteces_topsorted=Non
     Y = G['Y']
     sampled_graph = {}
     local_env = {}
-    local_env, sigma = evaluate_link_function(P,verteces_topsorted,sigma,local_env,do_log=do_log)
+    local_env, sigma = evaluate_link_function(P,verteces_topsorted,sigma,local_env={'prior_dist':{}},do_log=do_log)
 
     sampled_graph = local_env
     return_of_graph = graph[2] # meaning of program, but need to evaluate
