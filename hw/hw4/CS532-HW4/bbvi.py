@@ -1,69 +1,23 @@
-""" evaluate algorithm 6 in 
-van de Meent, J.-W., Paige, B., Yang, H., & Wood, F. (2018). 
-An Introduction to Probabilistic Programming, XX(Xx), 1–221. 
-http://doi.org/10.1561/XXXXXXXXXX
-
-Acknowledgements to 
-Yuan T https://github.com/yuant95/CPSC532W/blob/master/CS532-HW2/evaluation_based_sampling.py
-Masoud Mokhtari https://github.com/MasoudMo/CPSC-532W/blob/master/HW2/evaluation_based_sampling.py
-Mohamad Amin Mohamadi https://github.com/mohamad-amin/CPSC-532W
-"""
-
-import os
-import json
 import logging
 
+import numpy as np
 import torch
 from torch import tensor
 
-from daphne import daphne
 from primitives import primitives_d, distributions_d, number, distribution_types
+import distributions # for unconstrained optimization
+
 
 number = (int,float)
 
 logging.basicConfig(format='%(levelname)s:%(message)s')
 logger = logging.getLogger('simple_example')
 logger.setLevel(logging.DEBUG)
-        
-
-def evaluate_program(ast,sigma,do_log=False):
-    """Evaluate a program as desugared by daphne, generate a sample from the prior
-    Args:
-        ast: json FOPPL program
-    Returns: sample from the prior of ast
-    """
-    defn_d ={}
-    ast0 = ast[0]
-    
-    if ast0[0] == 'defn':
-        defn_function_name = ast0[1]
-        defn_function_args = ast0[2]
-        defn_function_body = ast0[3]
-        defn_d[defn_function_name] = [defn_function_args,defn_function_body]
-        ast1 = ast[1]
-        res, sigma = eval_algo11(ast1,sigma,defn_d=defn_d,do_log=do_log)
-    elif len(ast) == 1:
-        res, sigma = eval_algo11(ast0,sigma,defn_d=defn_d,do_log=do_log)
-    else:
-        assert False
-    return res, sigma
 
 
-def score(distribution,c):
-    """Score pytorch distributions with .log_prob, but in a robust way for the type of c
-    """
-    if isinstance(c,bool) or c.type() in ['torch.BoolTensor', 'torch.LongTensor']:
-        log_w = distribution.log_prob(c.double())
-    else:
-        log_w = distribution.log_prob(c)
-    return log_w
-
-
-def evaluate(e,sigma=0,local_env={},defn_d={},do_log=False,logger_string=''):
-    # TODO: get local_env to evaluate values to tensors, not regular floats
+def eval_algo11(e,sigma,local_env={},defn_d={},do_log=False,logger_string='',vertex=None):
     # remember to return evaluate (recursive)
-    # everytime we call evaluate, we have to use local_env, otherwise it gets overwritten with the default {}
-    # if do_log: logger.info('logger_string {}'.format(logger_string))
+        # everytime we call evaluate, we have to use local_env, otherwise it gets overwritten with the default {}
     if do_log: logger.info('ls {}'.format(logger_string))
     if do_log: logger.info('e {}, local_env {}, sigma {}'.format(e, local_env, sigma))
 
@@ -92,7 +46,7 @@ def evaluate(e,sigma=0,local_env={},defn_d={},do_log=False,logger_string=''):
         elif e in local_env.keys():
             if do_log: logger.info('match case local_env: e {}, sigma {}'.format(e, sigma))
             if do_log: logger.info('match case local_env: local_env[e] {}'.format(local_env[e]))
-            return local_env[e], sigma # TODO return evaluate?
+            return local_env[e], sigma 
         elif e in list(defn_d.keys()):
             if do_log: logger.info('match case defn_d: e {}, sigma {}'.format(e, sigma))
             return e, sigma
@@ -103,16 +57,43 @@ def evaluate(e,sigma=0,local_env={},defn_d={},do_log=False,logger_string=''):
             assert False, 'case not matched'
     elif e[0] == 'sample':
         if do_log: logger.info('match case sample: e {}, sigma {}'.format(e,sigma))
-        distribution, sigma = evaluate(e[1],sigma,local_env,defn_d,do_log=do_log)
-        return distribution.sample(), sigma # match shape in number base case
+        distribution, sigma = eval_algo11(e[1],sigma,local_env,defn_d,do_log=do_log)
+        # TODO: initialize proposal using prior
+        if vertex not in sigma['Q'].keys():
+            if do_log: logger.info('match case sample: using prior for vertex {}'.format(vertex))
+            if isinstance(distribution,torch.distributions.normal.Normal):
+                p = local_env['prior_dist'][vertex]
+                loc, scale = p.loc, p.scale
+                q = distributions.Normal(loc,scale)
+                q = q.make_copy_with_grads()
+            elif isinstance(distribution,torch.distributions.bernoulli.Bernoulli):
+                q = distributions.Bernoulli
+            elif isinstance(distribution,torch.distributions.Gamma): 
+                q = distributions.Gamma
+            elif isinstance(distribution,torch.distributions.Categorical): 
+                q = distributions.Categorical
+            elif isinstance(distribution,torch.distributions.Dirichlet): 
+                q = distributions.Dirichlet
+            else:
+                assert False, 'no suitable proposal distribution'
+            sigma['Q'][vertex] = q
+
+        q = sigma['Q'][vertex]
+        constant = q.sample()
+        G_v = grad_log_prob(q,constant)
+        sigma['grad'][vertex] = G_v
+        log_wv = score(distribution,constant) - score(q,constant)
+        sigma['logW'] += log_wv
+        if do_log: logger.info('match case sample: q {}, constant {}, G_v {}, log_wv {}, logW {}'.format(q, constant, G_v,log_wv, sigma['logW']))
+        return constant, sigma # match shape in number base case
     elif e[0] == 'observe':
         if do_log: logger.info('match case observe: e {}, sigma {}'.format(e,sigma))
         e1, e2 = e[1:]
-        d1, sigma = evaluate(e1,sigma,local_env,defn_d,do_log=do_log)
-        c2, sigma = evaluate(e2,sigma,local_env,defn_d,do_log=do_log)
+        d1, sigma = eval_algo11(e1,sigma,local_env,defn_d,do_log=do_log)
+        c2, sigma = eval_algo11(e2,sigma,local_env,defn_d,do_log=do_log)
         log_w =score(d1,c2)
         if do_log: logger.info('match case observe: d1 {}, c2 {}, log_w {}, sigma {}'.format(e,d1, c2, log_w, sigma))
-        sigma += log_w
+        sigma['logW'] += log_w
         return c2, sigma
     elif e[0] == 'let': 
         if do_log: logger.info('match case let: e {}, sigma {}'.format(e, sigma))
@@ -123,25 +104,25 @@ def evaluate(e,sigma=0,local_env={},defn_d={},do_log=False,logger_string=''):
             # e[2] : e0
         # evaluates e1 to c1 and binds this value to e0
         # this means we update the context with old context plus {v1:c1}
-        c1, sigma = evaluate(e[1][1],sigma,local_env,defn_d,do_log=do_log) # evaluates e1 to c1
+        c1, sigma = eval_algo11(e[1][1],sigma,local_env,defn_d,do_log=do_log) # evaluates e1 to c1
         v1 = e[1][0]
-        return evaluate(e[2], sigma, local_env = {**local_env,v1:c1},defn_d=defn_d,do_log=do_log)
+        return eval_algo11(e[2], sigma, local_env = {**local_env,v1:c1},defn_d=defn_d,do_log=do_log)
     elif e[0] == 'if': # if e0 e1 e2
         if do_log: logger.info('match case if: e {}, sigma {}'.format(e, sigma))
         e1 = e[1]
         e2 = e[2]
         e3 = e[3]
-        e1_prime, sigma = evaluate(e1,sigma,local_env,defn_d,do_log=do_log)
+        e1_prime, sigma = eval_algo11(e1,sigma,local_env,defn_d,do_log=do_log)
         if e1_prime:
-            return evaluate(e2,sigma,local_env,defn_d,do_log=do_log)
+            return eval_algo11(e2,sigma,local_env,defn_d,do_log=do_log)
         else:
-            return evaluate(e3,sigma,local_env,defn_d,do_log=do_log) 
+            return eval_algo11(e3,sigma,local_env,defn_d,do_log=do_log) 
 
     else:
         cs = []
         for ei in e:
             if do_log: logger.info('cycling through expressions: ei {}, sigma {}'.format(ei,sigma))
-            c, sigma = evaluate(ei,sigma,local_env,defn_d,do_log=do_log)
+            c, sigma = eval_algo11(ei,sigma,local_env,defn_d,do_log=do_log)
             cs.append(c)
         if cs[0] in primitives_d:
             if do_log: logger.info('do case primitives_d: cs0 {}'.format(cs[0]))
@@ -157,9 +138,53 @@ def evaluate(e,sigma=0,local_env={},defn_d={},do_log=False,logger_string=''):
             defn_function_args, defn_function_body = defn_function_li
             local_env_update = {key:value for key,value in zip(defn_function_args, cs[1:])}
             if do_log: logger.info('do case defn: update to local_env from defn_d {}'.format(local_env_update))
-            return evaluate(defn_function_body,sigma,local_env = {**local_env, **local_env_update},defn_d=defn_d,do_log=do_log)
+            return eval_algo11(defn_function_body,sigma,local_env = {**local_env, **local_env_update},defn_d=defn_d,do_log=do_log)
         else:
             assert False, 'not implemented'
 
+    
 
-        
+def grad_log_prob(distribution_unconst_optim,c):
+    """TODO: derive these analytically for normal and verify same results
+    """
+    log_prob = distribution_unconst_optim.log_prob(c)
+    log_prob.backward()
+    lambda_v = distribution_unconst_optim.Parameters()
+    D_v = len(lambda_v)
+    G_v = torch.zeros(D_v)
+    for d in range(D_v):
+        lambda_v_d = lambda_v[d]
+        G_v[d] = lambda_v_d.grad
+    return G_v
+
+
+def elbo_gradients(G,logW,union_G_keys):
+    for v in union_G_keys:
+        #F_v = []
+        G_v = []
+        g_hat = {}
+        for l in range(L):
+            G_l = G[l]
+            if v in G_l.keys():
+                G_l_v = G_l[v].tolist()
+                G_v.append(G_l_v)
+                D_v = len(G_l_v)
+                #F_v_l = G_l_v*logW[t][l]
+                #F_v.append(F_v_l) # data specific tolist might not always work
+            else:
+                assert False, 'zero not implemented'
+        G_v = np.array(G_v)
+        F_v = G_v*logW.reshape(-1,1)
+
+        # cov and var to compute b_v
+        assert G_v.ndim == 2
+        D_v = G_v.shape[1]
+        b_v = np.zeros(D_v)
+        for d in range(D_v):
+            F_v_d = F_v[:,d]
+            G_v_d = G_v[:,d]
+            cov_F_G = np.cov(F_v_d,G_v_d)
+            b_v[d] = cov_F_G[0,1]/cov_F_G[1,1]
+        g_hat_v = (F_v - G_v*b_v).sum(0)  # sum over samples
+        g_hat[v] = g_hat_v
+    return g_hat
