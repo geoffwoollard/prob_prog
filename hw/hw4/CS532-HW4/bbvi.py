@@ -147,8 +147,8 @@ def eval_algo11(e,sigma,local_env={},defn_d={},do_log=False,logger_string='',ver
 def grad_log_prob(distribution_unconst_optim,c):
     """TODO: derive these analytically for normal and verify same results
     """
-    log_prob = distribution_unconst_optim.log_prob(c)
-    log_prob.backward()
+    neg_log_prob = -distribution_unconst_optim.log_prob(c)
+    neg_log_prob.backward()
     lambda_v = distribution_unconst_optim.Parameters()
     D_v = len(lambda_v)
     G_v = torch.zeros(D_v)
@@ -188,3 +188,50 @@ def elbo_gradients(G,logW,union_G_keys):
         g_hat_v = (F_v - G_v*b_v).sum(0)  # sum over samples
         g_hat[v] = g_hat_v
     return g_hat
+
+
+def optimizer_step(Q,g_hat):
+    """
+    no return of Q since modifies in place, and can't deep copy Q, and copy Q still accumulates
+    """
+    for v in g_hat.keys():
+        lambda_v = Q[v].Parameters()
+        optimizer = torch.optim.Adam(lambda_v, lr=1e-2)
+        D_v = len(lambda_v)
+
+        for idx in range(D_v):
+            param = lambda_v[idx]
+        #     param.requires_grad = True # TODO: include???
+
+            param.grad = tensor(g_hat['sample2'][idx],dtype=torch.float32)
+        optimizer.step() # moves lambda_v
+        optimizer.zero_grad() # TODO: need this? 
+
+
+def bbvi_algo12(T,L):
+    r, G = [], []
+    logW = np.zeros((T,L))
+
+    E, sampled_graph = sample_from_joint(graph,do_log=False)
+
+    sigma={'logW':tensor(0.),'Q':{},'grad':{}}
+    e = ['sample',['normal',1,1.1]]
+
+    for t in range(T):
+        G = []
+        r_t=[]
+        union_G_t_keys = set()
+        for l in range(L):
+            # loop through vertex and evaluate linker functions as e
+            r_t_l, sigma = eval_algo11(e,sigma=sigma,local_env = sampled_graph, vertex='sample2',do_log=False)
+            logW[t,l] = sigma['logW'].item()
+            G_l = (sigma['grad']).copy()
+            union_G_keys.update(set(G_l.keys()))
+            G.append(G_l)
+            r_t.append(r_t_l)
+        g_hat = elbo_gradients(G,logW[t],union_G_keys) 
+        Q = sigma['Q']
+        optimizer_step(Q,g_hat) # in place modification of Q
+
+        r.append(r_t)
+    return r, logW
