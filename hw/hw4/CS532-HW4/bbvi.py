@@ -82,6 +82,7 @@ def eval_algo11(e,sigma,local_env={},defn_d={},do_log=False,logger_string='',ver
         # TODO: double check do not have to do this again
         #q = q.make_copy_with_grads()
         constant = q.sample()
+        #print('constant sampled in eval',constant)
         G_v = grad_log_prob(q,constant)
         sigma['G'][vertex] = G_v
         log_wv = score(distribution,constant) - score(q,constant)
@@ -157,6 +158,7 @@ def grad_log_prob(distribution_unconst_optim,c):
     for d in range(D_v):
         lambda_v_d = lambda_v[d]
         G_v[d] = lambda_v_d.grad
+        lambda_v_d.grad = None
         # these grads need to be added to lambda_v to make log_prob maximal 
         # (backwards because log_prob.backward() assumes log_prob is a loss to be mimimized)
         # we will flip later when we convert these raw per sample gradients to g_hat (over L mini match with b chosen to lower variance)
@@ -247,12 +249,12 @@ def bbvi_algo12(graph,T,L,do_log=False,**kwargs):
             union_G_keys.update(set(G_l.keys()))
             G.append(G_l)
             r_t.append(r_t_l)
-            print('l {}, sigma {}'.format(l,sigma))
+            #print('l {}, sigma {}'.format(l,sigma))
         #print('sigma',sigma)
         g_hat = elbo_gradients(G,logW[t],union_G_keys) 
         #print('g_hat',g_hat)
         Q = sigma['Q']
-        print('Q before step',Q)
+        #print('Q before step',Q)
         Q = optimizer_step(Q,g_hat,**kwargs) # in place modification of Q
         print('Q after step',Q)
 
