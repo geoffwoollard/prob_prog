@@ -207,11 +207,13 @@ def eval_algo11(e,sigma,local_env={},defn_d={},do_log=False,logger_string='',ver
         if do_log: logger.info('match case sample: e {}, sigma {}'.format(e,sigma))
         distribution, sigma = eval_algo11(e[1],sigma,local_env,defn_d,do_log=do_log)
         # TODO: initialize proposal using prior
-        if vertex not in sigma['grad'].keys():
+        if vertex not in sigma['Q'].keys():
+            if do_log: logger.info('match case sample: using prior for vertex {}'.format(vertex))
             if isinstance(distribution,torch.distributions.normal.Normal):
                 p = local_env['prior_dist'][vertex]
                 loc, scale = p.loc, p.scale
                 q = distributions.Normal(loc,scale)
+                q = q.make_copy_with_grads()
             elif isinstance(distribution,torch.distributions.bernoulli.Bernoulli):
                 q = distributions.Bernoulli
             elif isinstance(distribution,torch.distributions.Gamma): 
@@ -222,14 +224,15 @@ def eval_algo11(e,sigma,local_env={},defn_d={},do_log=False,logger_string='',ver
                 q = distributions.Dirichlet
             else:
                 assert False, 'no suitable proposal distribution'
+            sigma['Q'][vertex] = q
 
-        sigma['Q'][vertex] = q
+        q = sigma['Q'][vertex]
         constant = q.sample()
         G_v = grad_log_prob(q,constant)
         sigma['grad'][vertex] = G_v
         log_wv = score(distribution,constant) - score(q,constant)
         sigma['logW'] += log_wv
-
+        if do_log: logger.info('match case sample: q {}, constant {}, G_v {}, log_wv {}, logW {}'.format(q, constant, G_v,log_wv, sigma['logW']))
         return constant, sigma # match shape in number base case
     elif e[0] == 'observe':
         if do_log: logger.info('match case observe: e {}, sigma {}'.format(e,sigma))
@@ -290,9 +293,16 @@ def eval_algo11(e,sigma,local_env={},defn_d={},do_log=False,logger_string='',ver
     
 
 def grad_log_prob(distribution_unconst_optim,c):
+    """TODO: derive these analytically for normal and verify same results
+    """
     log_prob = distribution_unconst_optim.log_prob(c)
     log_prob.backward()
-    G_v = distribution_unconst_optim.Parameters()
+    lambda_v = distribution_unconst_optim.Parameters()
+    D_v = len(lambda_v)
+    G_v = torch.zeros(D_v)
+    for d in range(D_v):
+        lambda_v_d = lambda_v[d]
+        G_v[d] = lambda_v_d.grad
     return G_v
 
         
