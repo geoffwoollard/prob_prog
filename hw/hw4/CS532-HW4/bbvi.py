@@ -79,6 +79,8 @@ def eval_algo11(e,sigma,local_env={},defn_d={},do_log=False,logger_string='',ver
             sigma['Q'][vertex] = q
 
         q = sigma['Q'][vertex]
+        # TODO: double check do not have to do this again
+        #q = q.make_copy_with_grads()
         constant = q.sample()
         G_v = grad_log_prob(q,constant)
         sigma['G'][vertex] = G_v
@@ -147,8 +149,8 @@ def eval_algo11(e,sigma,local_env={},defn_d={},do_log=False,logger_string='',ver
 def grad_log_prob(distribution_unconst_optim,c):
     """TODO: derive these analytically for normal and verify same results
     """
-    neg_log_prob = -distribution_unconst_optim.log_prob(c)
-    neg_log_prob.backward()
+    log_prob = distribution_unconst_optim.log_prob(c)
+    log_prob.backward()
     lambda_v = distribution_unconst_optim.Parameters()
     D_v = len(lambda_v)
     G_v = torch.zeros(D_v)
@@ -208,32 +210,36 @@ def optimizer_step(Q,g_hat,**kwargs):
     return Q
 
 
-def bbvi_algo12(graph,T,L,**kwargs):
+def bbvi_algo12(graph,T,L,do_log=False,**kwargs):
     r, G = [], []
     logW = np.zeros((T,L))
 
-    E, sampled_graph = sample_from_joint(graph,do_log=False)
+    E, sampled_graph = sample_from_joint(graph,do_log=do_log)
     print('sampled_graph',sampled_graph)
 
     sigma={'logW':tensor(0.),'Q':{},'G':{}}
-    e = ['sample',['normal',0,1]]
+    e = ['sample',torch.distributions.normal.Normal(tensor(0.),tensor(1.))]
 
     for t in range(T):
         G = []
         r_t=[]
         union_G_keys = set()
-        sigma['logW']:tensor(0.) # TODO: re-zero? does it make a difference to grads?
+        # sigma['logW']:tensor(0.) # TODO: re-zero? does it make a difference to grads?
+        # sigma['G'] = {}
+        
         for l in range(L):
+            sigma={'logW':tensor(0.),'Q':sigma['Q'],'G':{}}
             # loop through vertex and evaluate linker functions as e
-            r_t_l, sigma = eval_algo11(e,sigma=sigma,local_env = sampled_graph, vertex='sample2',do_log=False)
+            r_t_l, sigma = eval_algo11(e,sigma=sigma,local_env = sampled_graph, vertex='sample2',do_log=do_log)
             logW[t,l] = sigma['logW'].item()
             G_l = (sigma['G']).copy()
             union_G_keys.update(set(G_l.keys()))
             G.append(G_l)
             r_t.append(r_t_l)
-        # print(sigma)
+            print('l {}, sigma {}'.format(l,sigma))
+        #print('sigma',sigma)
         g_hat = elbo_gradients(G,logW[t],union_G_keys) 
-        print('g_hat',g_hat)
+        #print('g_hat',g_hat)
         Q = sigma['Q']
         Q = optimizer_step(Q,g_hat,**kwargs) # in place modification of Q
         print('Q',Q)
