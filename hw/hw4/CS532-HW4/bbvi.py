@@ -149,7 +149,7 @@ def eval_algo11(e,sigma,local_env={},defn_d={},do_log=False,logger_string='',ver
 def grad_log_prob(distribution_unconst_optim,c):
     """TODO: derive these analytically for normal and verify same results
     """
-    log_prob = distribution_unconst_optim.log_prob(c)
+    log_prob = -distribution_unconst_optim.log_prob(c)
     log_prob.backward()
     lambda_v = distribution_unconst_optim.Parameters()
     D_v = len(lambda_v)
@@ -202,9 +202,12 @@ def optimizer_step(Q,g_hat,**kwargs):
 
         for idx in range(D_v):
             param = lambda_v[idx]
-        #     param.requires_grad = True # TODO: include???
-
+            # param.requires_grad = True # TODO: include???
             param.grad = tensor(g_hat['sample2'][idx],dtype=torch.float32) # TODO: check sign. maximizing
+            # Optimizers subtract the gradient of all passed parameters using their .grad attribute as seen here 182. 
+            # Thus you would minimize the loss using gradient descent.
+            # https://discuss.pytorch.org/t/do-optimizers-minimize-or-maximize/69062
+
         optimizer.step() # moves lambda_v
         optimizer.zero_grad() # TODO: need this? 
     return Q
