@@ -170,8 +170,6 @@ def elbo_gradients(G,logW,union_G_keys):
                 G_l_v = G_l[v].tolist()
                 G_v.append(G_l_v)
                 D_v = len(G_l_v)
-                #F_v_l = G_l_v*logW[t][l]
-                #F_v.append(F_v_l) # data specific tolist might not always work
             else:
                 assert False, 'zero not implemented'
         G_v = np.array(G_v)
@@ -186,34 +184,36 @@ def elbo_gradients(G,logW,union_G_keys):
             G_v_d = G_v[:,d]
             cov_F_G = np.cov(F_v_d,G_v_d)
             b_v[d] = cov_F_G[0,1]/cov_F_G[1,1]
-        g_hat_v = (F_v - G_v*b_v).sum(0)  # sum over samples
+        g_hat_v = (F_v - G_v*b_v).mean(0)  # sum over samples divided by L
         g_hat[v] = g_hat_v
     return g_hat
 
 
-def optimizer_step(Q,g_hat):
+def optimizer_step(Q,g_hat,**kwargs):
     """
     no return of Q since modifies in place, and can't deep copy Q, and copy Q still accumulates
     """
     for v in g_hat.keys():
         lambda_v = Q[v].Parameters()
-        optimizer = torch.optim.Adam(lambda_v, lr=1e-2)
+        optimizer = torch.optim.Adam(lambda_v, **kwargs)
         D_v = len(lambda_v)
 
         for idx in range(D_v):
             param = lambda_v[idx]
         #     param.requires_grad = True # TODO: include???
 
-            param.grad = tensor(g_hat['sample2'][idx],dtype=torch.float32)
+            param.grad = tensor(g_hat['sample2'][idx],dtype=torch.float32) # TODO: check sign. maximizing
         optimizer.step() # moves lambda_v
         optimizer.zero_grad() # TODO: need this? 
+    return Q
 
 
-def bbvi_algo12(graph,T,L):
+def bbvi_algo12(graph,T,L,**kwargs):
     r, G = [], []
     logW = np.zeros((T,L))
 
     E, sampled_graph = sample_from_joint(graph,do_log=False)
+    print('sampled_graph',sampled_graph)
 
     sigma={'logW':tensor(0.),'Q':{},'G':{}}
     e = ['sample',['normal',0,1]]
@@ -222,6 +222,7 @@ def bbvi_algo12(graph,T,L):
         G = []
         r_t=[]
         union_G_keys = set()
+        sigma['logW']:tensor(0.) # TODO: re-zero? does it make a difference to grads?
         for l in range(L):
             # loop through vertex and evaluate linker functions as e
             r_t_l, sigma = eval_algo11(e,sigma=sigma,local_env = sampled_graph, vertex='sample2',do_log=False)
@@ -230,9 +231,12 @@ def bbvi_algo12(graph,T,L):
             union_G_keys.update(set(G_l.keys()))
             G.append(G_l)
             r_t.append(r_t_l)
+        # print(sigma)
         g_hat = elbo_gradients(G,logW[t],union_G_keys) 
+        print('g_hat',g_hat)
         Q = sigma['Q']
-        optimizer_step(Q,g_hat) # in place modification of Q
+        Q = optimizer_step(Q,g_hat,**kwargs) # in place modification of Q
+        print('Q',Q)
 
         r.append(r_t)
     return r, logW
