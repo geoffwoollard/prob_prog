@@ -149,7 +149,7 @@ def eval_algo11(e,sigma,local_env={},defn_d={},do_log=False,logger_string='',ver
 def grad_log_prob(distribution_unconst_optim,c):
     """TODO: derive these analytically for normal and verify same results
     """
-    log_prob = -distribution_unconst_optim.log_prob(c)
+    log_prob = distribution_unconst_optim.log_prob(c)
     log_prob.backward()
     lambda_v = distribution_unconst_optim.Parameters()
     D_v = len(lambda_v)
@@ -157,10 +157,17 @@ def grad_log_prob(distribution_unconst_optim,c):
     for d in range(D_v):
         lambda_v_d = lambda_v[d]
         G_v[d] = lambda_v_d.grad
+        # these grads need to be added to lambda_v to make log_prob maximal 
+        # (backwards because log_prob.backward() assumes log_prob is a loss to be mimimized)
+        # we will flip later when we convert these raw per sample gradients to g_hat (over L mini match with b chosen to lower variance)
     return G_v
 
 
 def elbo_gradients(G,logW,union_G_keys):
+    """
+    conversion of per sample gradients in mini match of size L to average gradient g_hat
+    b chosen to minimize variance of g_hat
+    """
     for v in union_G_keys:
         #F_v = []
         G_v = []
@@ -200,10 +207,11 @@ def optimizer_step(Q,g_hat,**kwargs):
         optimizer = torch.optim.Adam(lambda_v, **kwargs)
         D_v = len(lambda_v)
 
+        # TODO: although params already has grad from grad_log_prob, this is not the b adjusted g_hat
         for idx in range(D_v):
             param = lambda_v[idx]
             # param.requires_grad = True # TODO: include???
-            param.grad = tensor(g_hat['sample2'][idx],dtype=torch.float32) # TODO: check sign. maximizing
+            param.grad = tensor(-g_hat['sample2'][idx],dtype=torch.float32) # TODO: check sign. maximizing
             # Optimizers subtract the gradient of all passed parameters using their .grad attribute as seen here 182. 
             # Thus you would minimize the loss using gradient descent.
             # https://discuss.pytorch.org/t/do-optimizers-minimize-or-maximize/69062
@@ -244,8 +252,9 @@ def bbvi_algo12(graph,T,L,do_log=False,**kwargs):
         g_hat = elbo_gradients(G,logW[t],union_G_keys) 
         #print('g_hat',g_hat)
         Q = sigma['Q']
+        print('Q before step',Q)
         Q = optimizer_step(Q,g_hat,**kwargs) # in place modification of Q
-        print('Q',Q)
+        print('Q after step',Q)
 
         r.append(r_t)
     return r, logW
