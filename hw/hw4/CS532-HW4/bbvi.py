@@ -6,7 +6,7 @@ from torch import tensor
 
 from primitives import primitives_d, distributions_d, number, distribution_types
 import distributions # for unconstrained optimization
-
+from graph_based_sampling import sample_from_joint, score
 
 number = (int,float)
 
@@ -81,7 +81,7 @@ def eval_algo11(e,sigma,local_env={},defn_d={},do_log=False,logger_string='',ver
         q = sigma['Q'][vertex]
         constant = q.sample()
         G_v = grad_log_prob(q,constant)
-        sigma['grad'][vertex] = G_v
+        sigma['G'][vertex] = G_v
         log_wv = score(distribution,constant) - score(q,constant)
         sigma['logW'] += log_wv
         if do_log: logger.info('match case sample: q {}, constant {}, G_v {}, log_wv {}, logW {}'.format(q, constant, G_v,log_wv, sigma['logW']))
@@ -163,6 +163,7 @@ def elbo_gradients(G,logW,union_G_keys):
         #F_v = []
         G_v = []
         g_hat = {}
+        L = len(logW)
         for l in range(L):
             G_l = G[l]
             if v in G_l.keys():
@@ -208,24 +209,24 @@ def optimizer_step(Q,g_hat):
         optimizer.zero_grad() # TODO: need this? 
 
 
-def bbvi_algo12(T,L):
+def bbvi_algo12(graph,T,L):
     r, G = [], []
     logW = np.zeros((T,L))
 
     E, sampled_graph = sample_from_joint(graph,do_log=False)
 
-    sigma={'logW':tensor(0.),'Q':{},'grad':{}}
-    e = ['sample',['normal',1,1.1]]
+    sigma={'logW':tensor(0.),'Q':{},'G':{}}
+    e = ['sample',['normal',0,1]]
 
     for t in range(T):
         G = []
         r_t=[]
-        union_G_t_keys = set()
+        union_G_keys = set()
         for l in range(L):
             # loop through vertex and evaluate linker functions as e
             r_t_l, sigma = eval_algo11(e,sigma=sigma,local_env = sampled_graph, vertex='sample2',do_log=False)
             logW[t,l] = sigma['logW'].item()
-            G_l = (sigma['grad']).copy()
+            G_l = (sigma['G']).copy()
             union_G_keys.update(set(G_l.keys()))
             G.append(G_l)
             r_t.append(r_t_l)
