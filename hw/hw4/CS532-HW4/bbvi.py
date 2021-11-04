@@ -16,6 +16,11 @@ logger = logging.getLogger('simple_example')
 logger.setLevel(logging.DEBUG)
 
 def eval_algo11_deterministic(e,sigma,local_env={},defn_d={},do_log=False,logger_string='',vertex=None):
+    """
+    do not handle sample or observe.
+    done in higher level parser of linker function.
+    just eval distribution object that gets sampled or observed
+    """
     # remember to return evaluate (recursive)
         # everytime we call evaluate, we have to use local_env, otherwise it gets overwritten with the default {}
     if do_log: logger.info('ls {}'.format(logger_string))
@@ -58,7 +63,7 @@ def eval_algo11_deterministic(e,sigma,local_env={},defn_d={},do_log=False,logger
     elif e[0] == 'sample':
         assert False
         if do_log: logger.info('match case sample: e {}, sigma {}'.format(e,sigma))
-        distribution, sigma = eval_algo11(e[1],sigma,local_env,defn_d,do_log=do_log)
+        distribution, sigma = eval_algo11_deterministic(e[1],sigma,local_env,defn_d,do_log=do_log)
         # TODO: initialize proposal using prior
         if vertex not in sigma['Q'].keys():
             if do_log: logger.info('match case sample: using prior for vertex {}'.format(vertex))
@@ -95,8 +100,8 @@ def eval_algo11_deterministic(e,sigma,local_env={},defn_d={},do_log=False,logger
         assert False
         if do_log: logger.info('match case observe: e {}, sigma {}'.format(e,sigma))
         e1, e2 = e[1:]
-        d1, sigma = eval_algo11(e1,sigma,local_env,defn_d,do_log=do_log)
-        c2, sigma = eval_algo11(e2,sigma,local_env,defn_d,do_log=do_log)
+        d1, sigma = eval_algo11_deterministic(e1,sigma,local_env,defn_d,do_log=do_log)
+        c2, sigma = eval_algo11_deterministic(e2,sigma,local_env,defn_d,do_log=do_log)
         log_w =score(d1,c2)
         if do_log: logger.info('match case observe: d1 {}, c2 {}, log_w {}, sigma {}'.format(e,d1, c2, log_w, sigma))
         sigma['logW'] += log_w
@@ -110,25 +115,25 @@ def eval_algo11_deterministic(e,sigma,local_env={},defn_d={},do_log=False,logger
             # e[2] : e0
         # evaluates e1 to c1 and binds this value to e0
         # this means we update the context with old context plus {v1:c1}
-        c1, sigma = eval_algo11(e[1][1],sigma,local_env,defn_d,do_log=do_log) # evaluates e1 to c1
+        c1, sigma = eval_algo11_deterministic(e[1][1],sigma,local_env,defn_d,do_log=do_log) # evaluates e1 to c1
         v1 = e[1][0]
-        return eval_algo11(e[2], sigma, local_env = {**local_env,v1:c1},defn_d=defn_d,do_log=do_log)
+        return eval_algo11_deterministic(e[2], sigma, local_env = {**local_env,v1:c1},defn_d=defn_d,do_log=do_log)
     elif e[0] == 'if': # if e0 e1 e2
         if do_log: logger.info('match case if: e {}, sigma {}'.format(e, sigma))
         e1 = e[1]
         e2 = e[2]
         e3 = e[3]
-        e1_prime, sigma = eval_algo11(e1,sigma,local_env,defn_d,do_log=do_log)
+        e1_prime, sigma = eval_algo11_deterministic(e1,sigma,local_env,defn_d,do_log=do_log)
         if e1_prime:
-            return eval_algo11(e2,sigma,local_env,defn_d,do_log=do_log)
+            return eval_algo11_deterministic(e2,sigma,local_env,defn_d,do_log=do_log)
         else:
-            return eval_algo11(e3,sigma,local_env,defn_d,do_log=do_log) 
+            return eval_algo11_deterministic(e3,sigma,local_env,defn_d,do_log=do_log) 
 
     else:
         cs = []
         for ei in e:
             if do_log: logger.info('cycling through expressions: ei {}, sigma {}'.format(ei,sigma))
-            c, sigma = eval_algo11(ei,sigma,local_env,defn_d,do_log=do_log)
+            c, sigma = eval_algo11_deterministic(ei,sigma,local_env,defn_d,do_log=do_log)
             cs.append(c)
         if cs[0] in primitives_d:
             if do_log: logger.info('do case primitives_d: cs0 {}'.format(cs[0]))
@@ -144,7 +149,7 @@ def eval_algo11_deterministic(e,sigma,local_env={},defn_d={},do_log=False,logger
             defn_function_args, defn_function_body = defn_function_li
             local_env_update = {key:value for key,value in zip(defn_function_args, cs[1:])}
             if do_log: logger.info('do case defn: update to local_env from defn_d {}'.format(local_env_update))
-            return eval_algo11(defn_function_body,sigma,local_env = {**local_env, **local_env_update},defn_d=defn_d,do_log=do_log)
+            return eval_algo11_deterministic(defn_function_body,sigma,local_env = {**local_env, **local_env_update},defn_d=defn_d,do_log=do_log)
         else:
             assert False, 'not implemented'
 
@@ -324,7 +329,7 @@ def evaluate_link_function_bbvi(P,verteces_topsorted,sigma,local_env,do_log):
             assert False
 
     return local_env, sigma
-     
+
 
 def grad_log_prob(distribution_unconst_optim,c):
     """TODO: derive these analytically for normal and verify same results
