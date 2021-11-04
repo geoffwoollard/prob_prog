@@ -235,7 +235,7 @@ def elbo_gradients(G,logW,union_G_keys):
             L, D_v, n_D_v = G_v.shape
             assert D_v == 1
             d=0
-            b_v1 = np.zeros(D_v)
+            b_v_d1 = np.zeros(D_v)
             cov_sum_d1, var_sum_d1 = 0, 0
             for j in range(n_D_v):
                 G_v_1_j = G_v[:,d,j]
@@ -243,9 +243,12 @@ def elbo_gradients(G,logW,union_G_keys):
                 cov_F_G_j = np.cov(F_v[:,d,j],G_v[:,d,j])
                 cov_sum_d1 += cov_F_G_j[0,1]
                 var_sum_d1 += cov_F_G_j[1,1]
-            b_v = cov_sum_d1 / var_sum_d1
-            g_hat_v = (F_v - G_v*b_v1).mean(0)
-            g_hat[v] = g_hat_v
+            b_v_d1 = cov_sum_d1 / var_sum_d1
+            if np.isnan(b_v_d1):
+                b_v_d1 = 1
+            g_hat_v_d1 = (F_v - G_v*b_v_d1).mean(0)
+            g_hat[v] = g_hat_v_d1
+            # print('G_v {}, cov_sum_d1 {}, var_sum_d1 {}, g_hat_v_d1 {}'.format(G_v,cov_sum_d1,var_sum_d1,g_hat_v_d1))
 
         else:
             assert False, 'G_v {}, type {}'.format(G_v, type(G_v))
@@ -260,7 +263,6 @@ def optimizer_step(Q,global_optimizers,g_hat,**kwargs):
     for vertex in g_hat.keys():
 
         lambda_v = Q[vertex].Parameters()
-        #optimizer = torch.optim.Adam(lambda_v, **kwargs)
         optimizer = global_optimizers[vertex]
         D_v = len(lambda_v)
 
@@ -279,7 +281,7 @@ def optimizer_step(Q,global_optimizers,g_hat,**kwargs):
 
 
 
-def graph_bbvi_algo12(graph,T,L,verteces_topsorted=None,do_log=False,**kwargs):
+def graph_bbvi_algo12(graph,T,L,sigma=None,do_log=False,**kwargs):
     """This function does ancestral sampling starting from the prior.
     And then ancestral sampling from a learned proposal with bbvi
     TODO: fails when L=1. shapes? averaging?
@@ -291,33 +293,36 @@ def graph_bbvi_algo12(graph,T,L,verteces_topsorted=None,do_log=False,**kwargs):
     return_of_graph = graph[2] # meaning of program, but need to evaluate
     verteces = G['V']
     arcs = G['A']
-    if verteces_topsorted is None:
-        verteces_topsorted = topsort(verteces, arcs)
-    else:
-        assert set(verteces) == set(verteces_topsorted)
+    verteces_topsorted = topsort(verteces, arcs)
     P = G['P']
     Y = G['Y']
-    
-    E, sampled_graph = sample_from_joint(graph,do_log=do_log) 
-    # now returns Berens' distributions primitives in sampled_graph['prior_dist']
-    # print('sampled_graph',sampled_graph)
-        
-    # initialize once
-    # d_prior = distributions.Normal(tensor(0.),tensor(1.))
-    # d_prior = d_prior.make_copy_with_grads()
-    sigma={'logW':tensor(0.),'Q':{},'G':{},'global_optimizers':{}}
-    for vertex in sampled_graph['prior_dist'].keys():
-        d_prior = sampled_graph['prior_dist'][vertex]
-        d_prior_withgrads = d_prior.make_copy_with_grads() 
-            # only do this once!
-            # no check cases or prior init needed within evaluate_link_function_algo11 etc.
-        sigma['Q'][vertex] = d_prior_withgrads
 
-        # global optimizer
-        Q = sigma['Q']
-        lambda_v = Q[vertex].Parameters()
-        optimizer = torch.optim.Adam(lambda_v, **kwargs)
-        sigma['global_optimizers'][vertex] = optimizer
+    if (sigma is not None) and ('Q' in sigma) and ('global_optimizers' in sigma):
+        pass
+
+    else:
+    
+        E, sampled_graph = sample_from_joint(graph,do_log=do_log) 
+        # now returns Berens' distributions primitives in sampled_graph['prior_dist']
+        # print('sampled_graph',sampled_graph)
+            
+        # initialize once
+        # d_prior = distributions.Normal(tensor(0.),tensor(1.))
+        # d_prior = d_prior.make_copy_with_grads()
+        sigma={'logW':tensor(0.),'Q':{},'G':{},'global_optimizers':{}}
+        for vertex in sampled_graph['prior_dist'].keys():
+            d_prior = sampled_graph['prior_dist'][vertex]
+            d_prior_withgrads = d_prior.make_copy_with_grads() 
+                # only do this once!
+                # no check cases or prior init needed within evaluate_link_function_algo11 etc.
+            sigma['Q'][vertex] = d_prior_withgrads
+
+            # global optimizer
+            Q = sigma['Q']
+            lambda_v = Q[vertex].Parameters()
+            optimizer = torch.optim.Adam(lambda_v, **kwargs)
+            sigma['global_optimizers'][vertex] = optimizer
+
     if do_log: logger_graph.info('sigma',sigma)
 
 
@@ -352,5 +357,5 @@ def graph_bbvi_algo12(graph,T,L,verteces_topsorted=None,do_log=False,**kwargs):
             print('t={}, Q after step={}'.format(t,Q))
 
         r.append(r_t)
-    return r, logW
+    return r, logW, sigma
 
