@@ -10,6 +10,7 @@ Masoud Mokhtari https://github.com/MasoudMo/CPSC-532W/blob/master/HW2/primitives
 
 import torch
 import numpy as np
+from distributions import Normal
 
 number = (float, int)
 distribution_types = (
@@ -20,7 +21,7 @@ distribution_types = (
     torch.distributions.Categorical,
     torch.distributions.bernoulli.Bernoulli,
     torch.distributions.dirichlet.Dirichlet,
-    torch.distributions.dirichlet.Gamma,
+    torch.distributions.gamma.Gamma,
     )
 
 
@@ -208,7 +209,7 @@ primitives_d = {
 
 
 def normal(mean_std):
-    return two_arg_op_primitive(torch.distributions.Normal,mean_std)
+    return two_arg_op_primitive(torch.distributions.normal.Normal,mean_std)
 
 
 def beta(alpha_beta):

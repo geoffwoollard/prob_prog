@@ -7,6 +7,7 @@ from torch import tensor
 from primitives import primitives_d, distributions_d, number, distribution_types
 import distributions # for unconstrained optimization
 from graph_based_sampling import sample_from_joint, score
+from distributions import Normal
 
 number = (int,float)
 
@@ -61,6 +62,7 @@ def eval_algo11(e,sigma,local_env={},defn_d={},do_log=False,logger_string='',ver
         # TODO: initialize proposal using prior
         if vertex not in sigma['Q'].keys():
             if do_log: logger.info('match case sample: using prior for vertex {}'.format(vertex))
+            # TODO: change primitives to distributions, so don't need to do this
             if isinstance(distribution,torch.distributions.normal.Normal):
                 p = local_env['prior_dist'][vertex]
                 loc, scale = p.loc, p.scale
@@ -157,7 +159,7 @@ def grad_log_prob(distribution_unconst_optim,c):
     G_v = torch.zeros(D_v)
     for d in range(D_v):
         lambda_v_d = lambda_v[d]
-        G_v[d] = lambda_v_d.grad
+        G_v[d] = lambda_v_d.grad.clone().detach() # seem not to need to do clone().detach(), but keep just in case
         lambda_v_d.grad = None
         # these grads need to be added to lambda_v to make log_prob maximal 
         # (backwards because log_prob.backward() assumes log_prob is a loss to be mimimized)
@@ -213,7 +215,7 @@ def optimizer_step(Q,g_hat,**kwargs):
         for idx in range(D_v):
             param = lambda_v[idx]
             # param.requires_grad = True # TODO: include???
-            param.grad = tensor(-g_hat['sample2'][idx],dtype=torch.float32) # TODO: check sign. maximizing
+            param.grad = tensor(-g_hat[v][idx],dtype=torch.float32) # TODO: check sign. maximizing
             # Optimizers subtract the gradient of all passed parameters using their .grad attribute as seen here 182. 
             # Thus you would minimize the loss using gradient descent.
             # https://discuss.pytorch.org/t/do-optimizers-minimize-or-maximize/69062
@@ -231,7 +233,7 @@ def bbvi_algo12(graph,T,L,do_log=False,**kwargs):
     print('sampled_graph',sampled_graph)
 
     sigma={'logW':tensor(0.),'Q':{},'G':{}}
-    e = ['sample',torch.distributions.normal.Normal(tensor(0.),tensor(1.))]
+    e = ['sample',torch.distributions.normal.Normal(tensor(-2.),tensor(10.))]
 
     for t in range(T):
         G = []
