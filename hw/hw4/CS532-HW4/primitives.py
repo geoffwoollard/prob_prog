@@ -225,19 +225,19 @@ def uniform(low_hi):
 
 
 def discrete(prob_vector):
-    return one_arg_op_primitive(torch.distributions.Categorical,prob_vector)
+    return one_arg_op_primitive(distributions.Categorical,prob_vector)
 
 
 def flip(prob):
-    return one_arg_op_primitive(torch.distributions.bernoulli.Bernoulli,prob)
+    return one_arg_op_primitive(distributions.Bernoulli,prob)
 
 
 def dirichlet(concentration):
-    return one_arg_op_primitive(torch.distributions.dirichlet.Dirichlet,concentration)
+    return one_arg_op_primitive(distributions.Dirichlet,concentration)
 
 
 def gamma(concentration_rate):
-    return two_arg_op_primitive(torch.distributions.gamma.Gamma,concentration_rate)
+    return two_arg_op_primitive(distributions.Gamma,concentration_rate)
 
 
 distributions_d = {

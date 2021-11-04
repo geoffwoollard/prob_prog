@@ -63,7 +63,7 @@ def eval_algo11_deterministic(e,sigma,local_env={},defn_d={},do_log=False,logger
             if do_log: logger.info('match case distribution: e {}, sigma {}'.format(e,sigma))
             return e, sigma
         else:
-            assert False, 'case not matched'
+            assert False, 'case not matched {}'.format(e)
     
     elif e[0] == 'sample':
         assert False, 'deterministic evaluator'
@@ -116,7 +116,7 @@ def eval_algo11_deterministic(e,sigma,local_env={},defn_d={},do_log=False,logger
             if do_log: logger.info('do case defn: update to local_env from defn_d {}'.format(local_env_update))
             return eval_algo11_deterministic(defn_function_body,sigma,local_env = {**local_env, **local_env_update},defn_d=defn_d,do_log=do_log)
         else:
-            assert False, 'not implemented'
+            assert False, 'not implemented {}'.format(cs)
 
 
 def evaluate_link_function_algo11(P,verteces_topsorted,sigma,local_env,do_log):
@@ -168,13 +168,29 @@ def grad_log_prob(distribution_unconst_optim,c):
     lambda_v = distribution_unconst_optim.Parameters()
     D_v = len(lambda_v)
     G_v = torch.zeros(D_v)
+    # if D_v==1:
+    #     lambda_vd = lambda_v[0]
+    #     if 
+    #     else:
+    #         assert False, 'not implemented for lambda_v {}'.format(lambda_v)
+
     for d in range(D_v):
         lambda_v_d = lambda_v[d]
-        G_v[d] = lambda_v_d.grad.clone().detach() # seem not to need to do clone().detach(), but keep just in case
-        lambda_v_d.grad = None
-        # these grads need to be added to lambda_v to make log_prob maximal 
-        # (backwards because log_prob.backward() assumes log_prob is a loss to be mimimized)
-        # we will flip later when we convert these raw per sample gradients to g_hat (over L mini match with b chosen to lower variance)
+        if lambda_v_d.ndim > 0: # e.g. Categorical concentration
+            assert D_v == 1, 'only implemented for multi dimentional lambda_vd for one component, incase different sizes  {}'.format(lambda_v)
+            # TODO: generlaize with dict to lambda_vd component, with different sizes
+            G_v_d = torch.zeros_like(lambda_v_d)
+            G_v_d = lambda_v_d.grad.clone().detach()
+            G_v = G_v_d.reshape(1,-1)
+            lambda_v_d.grad = None
+
+        else:
+        
+            G_v[d] = lambda_v_d.grad.clone().detach() # seem not to need to do clone().detach(), but keep just in case
+            lambda_v_d.grad = None
+            # these grads need to be added to lambda_v to make log_prob maximal 
+            # (backwards because log_prob.backward() assumes log_prob is a loss to be mimimized)
+            # we will flip later when we convert these raw per sample gradients to g_hat (over L mini match with b chosen to lower variance)
     return G_v
 
 
@@ -198,19 +214,42 @@ def elbo_gradients(G,logW,union_G_keys):
             else:
                 assert False, 'zero not implemented'
         G_v = np.array(G_v)
-        F_v = G_v*logW.reshape(-1,1)
+        # assert G_v.ndim == 2, 'G_v {}, type {}'.format(G_v, type(G_v))
+
 
         # cov and var to compute b_v
-        assert G_v.ndim == 2
-        D_v = G_v.shape[1]
-        b_v = np.zeros(D_v)
-        for d in range(D_v):
-            F_v_d = F_v[:,d]
-            G_v_d = G_v[:,d]
-            cov_F_G = np.cov(F_v_d,G_v_d)
-            b_v[d] = cov_F_G[0,1]/cov_F_G[1,1]
-        g_hat_v = (F_v - G_v*b_v).mean(0)  # sum over samples divided by L
-        g_hat[v] = g_hat_v
+        if G_v.ndim == 2:
+            F_v = G_v*logW.reshape(-1,1)
+            D_v = G_v.shape[1]
+            b_v = np.zeros(D_v)
+            for d in range(D_v):
+                F_v_d = F_v[:,d]
+                G_v_d = G_v[:,d]
+                cov_F_G = np.cov(F_v_d,G_v_d)
+                b_v[d] = cov_F_G[0,1]/cov_F_G[1,1]
+            g_hat_v = (F_v - G_v*b_v).mean(0)  # sum over samples divided by L
+            g_hat[v] = g_hat_v
+
+        elif G_v.ndim == 3:
+            F_v = G_v*logW.reshape(-1,1,1)
+            L, D_v, n_D_v = G_v.shape
+            assert D_v == 1
+            d=0
+            b_v1 = np.zeros(D_v)
+            cov_sum_d1, var_sum_d1 = 0, 0
+            for j in range(n_D_v):
+                G_v_1_j = G_v[:,d,j]
+                F_v_1_j = F_v[:,d,j]
+                cov_F_G_j = np.cov(F_v[:,d,j],G_v[:,d,j])
+                cov_sum_d1 += cov_F_G_j[0,1]
+                var_sum_d1 += cov_F_G_j[1,1]
+            b_v = cov_sum_d1 / var_sum_d1
+            g_hat_v = (F_v - G_v*b_v1).mean(0)
+            g_hat[v] = g_hat_v
+
+        else:
+            assert False, 'G_v {}, type {}'.format(G_v, type(G_v))
+
     return g_hat
 
 
