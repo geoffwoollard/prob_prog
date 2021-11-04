@@ -318,13 +318,15 @@ def evaluate_link_function_bbvi(P,verteces_topsorted,sigma,local_env,do_log):
 #             local_env.update(update_local_env)
 #             local_env['prior_dist'][vertex] = distribution
         elif link_function[0] == 'observe*':
+            
             if do_log: logger_graph.info('match case observe*: link_function {} sigma {}'.format(link_function, sigma))
             e1, e2 = link_function[1:]
-            d1, sigma = eval_algo11(e1,sigma,local_env,do_log=do_log)
-            c2, sigma = eval_algo11(e2,sigma,local_env,do_log=do_log)
+            d1, sigma = eval_algo11_deterministic(e1,sigma,local_env,do_log=do_log)
+            c2, sigma = eval_algo11_deterministic(e2,sigma,local_env,do_log=do_log)
             log_w = score(d1,c2)
-            sigma  += log_w
+            sigma['logW'] += log_w
             if do_log: logger_graph.info('match case observe*: d1 {}, c2 {}, log_w {}, sigma {}'.format(d1, c2, log_w, sigma))
+    
         else:
             assert False
 
