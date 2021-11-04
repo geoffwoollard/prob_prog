@@ -15,6 +15,10 @@ logging.basicConfig(format='%(levelname)s:%(message)s')
 logger = logging.getLogger('simple_example')
 logger.setLevel(logging.DEBUG)
 
+logging.basicConfig(format='%(levelname)s:%(message)s')
+logger_graph = logging.getLogger('simple_example')
+logger_graph.setLevel(logging.DEBUG)
+
 def eval_algo11_deterministic(e,sigma,local_env={},defn_d={},do_log=False,logger_string='',vertex=None):
     """
     do not handle sample or observe.
@@ -287,7 +291,7 @@ def eval_algo11(e,sigma,local_env={},defn_d={},do_log=False,logger_string='',ver
 
 
 
-def evaluate_link_function_bbvi(P,verteces_topsorted,sigma,local_env,do_log):
+def evaluate_link_function_algo11(P,verteces_topsorted,sigma,local_env,do_log):
     for vertex in verteces_topsorted:
         link_function = P[vertex]
         if link_function[0] == 'sample*':
@@ -298,27 +302,18 @@ def evaluate_link_function_bbvi(P,verteces_topsorted,sigma,local_env,do_log):
             # no sample or observe in eval_algo11
             distribution, sigma = eval_algo11_deterministic(e,sigma,local_env = local_env, do_log=do_log) 
             
-            # bbvi
+            # bbvi algo 11
             q = sigma['Q'][vertex]
-            
             constant = q.sample()
             G_v = grad_log_prob(q,constant)
             sigma['G'][vertex] = G_v
             log_wv = score(distribution,constant) - score(q,constant)
             sigma['logW'] += log_wv
             if do_log: logger.info('match case sample: q {}, constant {}, G_v {}, log_wv {}, logW {}'.format(q, constant, G_v,log_wv, sigma['logW']))
-#             #return constant, sigma # match shape in number base case
             update_local_env = {vertex:constant}
             local_env.update(update_local_env)
-        
-                    
-#             if do_log: logger_graph.info('match case sample*: distribution {}, sigma {}'.format(sigma, distribution))
-#             E = distribution.sample() # now have concrete value. need to pass it as var to evaluate
-#             update_local_env = {vertex:E}#{vertex:E, vertex+'_dist':distribution}
-#             local_env.update(update_local_env)
-#             local_env['prior_dist'][vertex] = distribution
+
         elif link_function[0] == 'observe*':
-            
             if do_log: logger_graph.info('match case observe*: link_function {} sigma {}'.format(link_function, sigma))
             e1, e2 = link_function[1:]
             d1, sigma = eval_algo11_deterministic(e1,sigma,local_env,do_log=do_log)
@@ -446,3 +441,48 @@ def bbvi_algo12(graph,T,L,do_log=False,**kwargs):
 
         r.append(r_t)
     return r, logW
+
+def graph_bbvi_algo12(graph,sigma={},do_log=False,verteces_topsorted=None):
+    """This function does ancestral sampling starting from the prior.
+    
+    And then ancestral sampling from a learned proposal with bbvi
+
+    graph output from `daphne graph -i sugared.daphne`
+    * list of length 3
+      * first entry is defn dict
+        * {"string-defn-function-name":["fn", ["var_1", ..., "var_n"], e_function_body], ...}
+      * second entry is graph: {V,A,P,Y}
+        * "V","A","P","Y" are keys in dict
+        * "V" : ["string_name_vertex_1", ..., "string_name_vertex_n"] # list of string names of vertices
+        * "A" : {"string_name_vertex_1" : [..., "string_name_vertex_i", ...] # dict of arc pairs (u,v) with u a string key in the dict, and the value a list of string names of the vertices. note that the keys can be things like "uniform" and don't have to be vetex name strings
+        * "P" : "string_name_vertex_i" : ["sample*", e_i] # dict. keys vertex name strings and value a rested list with a linking function in it. typically e_i is a distribution object. 
+        * "Y" : observes
+      * third entry is return
+        * name of return rv, or constant
+
+    """
+    G = graph[1]
+    verteces = G['V']
+    arcs = G['A']
+    if verteces_topsorted is None:
+        verteces_topsorted = topsort(verteces, arcs)
+    else:
+        assert set(verteces) == set(verteces_topsorted)
+    P = G['P']
+    Y = G['Y']
+    sampled_graph = {}
+    local_env = {}
+    
+    # initialize once
+    d_prior = distributions.Normal(tensor(0.),tensor(1.))
+    d_prior = d_prior.make_copy_with_grads()
+    sigma = {'G':{},'logW':tensor(0.),'Q':{'sample2':d_prior}}
+    
+    local_env, sigma = evaluate_link_function_algo11(P,verteces_topsorted,sigma,local_env={},do_log=do_log)
+
+    sampled_graph = local_env
+    return_of_graph = graph[2] # meaning of program, but need to evaluate
+    # if do_log: print('sample_from_joint local_env',local_env)
+    # if do_log: print('sample_from_joint sampled_graph',sampled_graph)
+    E, sigma = eval_algo11_deterministic(return_of_graph,sigma, local_env = sampled_graph, do_log=do_log)
+    return E, sampled_graph
