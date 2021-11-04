@@ -6,7 +6,7 @@ from torch import tensor
 
 from primitives import primitives_d, distributions_d, number, distribution_types
 import distributions # for unconstrained optimization
-from graph_based_sampling import sample_from_joint, score
+from graph_based_sampling import sample_from_joint, score, topsort
 from distributions import Normal
 
 number = (int,float)
@@ -427,7 +427,7 @@ def bbvi_algo12(graph,T,L,do_log=False,**kwargs):
         for l in range(L):
             sigma={'logW':tensor(0.),'Q':sigma['Q'],'G':{}}
             # loop through vertex and evaluate linker functions as e
-            r_t_l, sigma = graph_eval_algo11(e,sigma=sigma,local_env = sampled_graph, vertex='sample2',do_log=do_log)
+            r_t_l, sigma = eval_algo11_deterministic(e,sigma=sigma,local_env = sampled_graph, vertex='sample2',do_log=do_log)
             logW[t,l] = sigma['logW'].item()
             G_l = (sigma['G']).copy()
             union_G_keys.update(set(G_l.keys()))
@@ -445,11 +445,15 @@ def bbvi_algo12(graph,T,L,do_log=False,**kwargs):
         r.append(r_t)
     return r, logW
 
-def graph_eval_algo11(graph,sigma={},do_log=False,verteces_topsorted=None):
+def graph_bbvi_algo12(graph,T,L,verteces_topsorted=None,do_log=False,**kwargs):
     """This function does ancestral sampling starting from the prior.
     And then ancestral sampling from a learned proposal with bbvi
     """
+    r, G = [], []
+    logW = np.zeros((T,L))
+
     G = graph[1]
+    return_of_graph = graph[2] # meaning of program, but need to evaluate
     verteces = G['V']
     arcs = G['A']
     if verteces_topsorted is None:
@@ -466,7 +470,7 @@ def graph_eval_algo11(graph,sigma={},do_log=False,verteces_topsorted=None):
     # initialize once
     d_prior = distributions.Normal(tensor(0.),tensor(1.))
     d_prior = d_prior.make_copy_with_grads()
-    sigma = {'G':{},'logW':tensor(0.),'Q':{}}
+    sigma={'logW':tensor(0.),'Q':{},'G':{}}
     for vertex in sampled_graph['prior_dist'].keys():
         d_prior = sampled_graph['prior_dist'][vertex]
         d_prior_withgrads = d_prior.make_copy_with_grads() 
@@ -474,12 +478,44 @@ def graph_eval_algo11(graph,sigma={},do_log=False,verteces_topsorted=None):
             # no check cases or prior init needed within evaluate_link_function_algo11 etc.
         sigma['Q'][vertex] = d_prior_withgrads
     # print('sigma',sigma)
-    
-    local_env, sigma = evaluate_link_function_algo11(P,verteces_topsorted,sigma,local_env={},do_log=do_log)
 
-    sampled_graph = local_env
-    return_of_graph = graph[2] # meaning of program, but need to evaluate
-    # if do_log: print('sample_from_joint local_env',local_env)
-    # if do_log: print('sample_from_joint sampled_graph',sampled_graph)
-    return_of_graph_E, sigma = eval_algo11_deterministic(return_of_graph,sigma, local_env = sampled_graph, do_log=do_log)
-    return return_of_graph_E, sigma # can return sampled_graph if needed
+
+    for t in range(T):
+        G = []
+        r_t=[]
+        union_G_keys = set()
+
+        for l in range(L):
+            sigma={'logW':tensor(0.),'Q':sigma['Q'],'G':{}} # re init gradients
+            # loop through vertex and evaluate linker functions as e
+
+            #r_t_l, sigma = graph_eval_algo11(e,sigma=sigma,local_env = sampled_graph, vertex='sample2',do_log=do_log)
+
+
+            # graph eval algo 11
+            local_env, sigma = evaluate_link_function_algo11(P,verteces_topsorted,sigma,local_env={},do_log=do_log)
+            sampled_graph = local_env
+            
+            # if do_log: print('sample_from_joint local_env',local_env)
+            # if do_log: print('sample_from_joint sampled_graph',sampled_graph)
+            r_t_l, sigma = eval_algo11_deterministic(return_of_graph,sigma, local_env = sampled_graph, do_log=do_log)
+
+            logW[t,l] = sigma['logW'].item()
+            G_l = (sigma['G']).copy()
+            union_G_keys.update(set(G_l.keys()))
+            G.append(G_l)
+            r_t.append(r_t_l)
+            #print('l {}, sigma {}'.format(l,sigma))
+        #print('sigma',sigma)
+        g_hat = elbo_gradients(G,logW[t],union_G_keys) 
+        #print('g_hat',g_hat)
+        Q = sigma['Q']
+        #print('Q before step',Q)
+        Q = optimizer_step(Q,g_hat,**kwargs) # in place modification of Q
+        print('Q after step',Q)
+
+        r.append(r_t)
+    return r, logW
+    
+
+    #return return_of_graph_E, sigma # can return sampled_graph if needed
