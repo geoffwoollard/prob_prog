@@ -183,10 +183,11 @@ def elbo_gradients(G,logW,union_G_keys):
     conversion of per sample gradients in mini match of size L to average gradient g_hat
     b chosen to minimize variance of g_hat
     """
+    g_hat = {}
     for v in union_G_keys:
         #F_v = []
         G_v = []
-        g_hat = {}
+        
         L = len(logW)
         for l in range(L):
             G_l = G[l]
@@ -263,8 +264,8 @@ def graph_bbvi_algo12(graph,T,L,verteces_topsorted=None,do_log=False,**kwargs):
     # print('sampled_graph',sampled_graph)
         
     # initialize once
-    d_prior = distributions.Normal(tensor(0.),tensor(1.))
-    d_prior = d_prior.make_copy_with_grads()
+    # d_prior = distributions.Normal(tensor(0.),tensor(1.))
+    # d_prior = d_prior.make_copy_with_grads()
     sigma={'logW':tensor(0.),'Q':{},'G':{},'global_optimizers':{}}
     for vertex in sampled_graph['prior_dist'].keys():
         d_prior = sampled_graph['prior_dist'][vertex]
@@ -278,7 +279,7 @@ def graph_bbvi_algo12(graph,T,L,verteces_topsorted=None,do_log=False,**kwargs):
         lambda_v = Q[vertex].Parameters()
         optimizer = torch.optim.Adam(lambda_v, **kwargs)
         sigma['global_optimizers'][vertex] = optimizer
-    # print('sigma',sigma)
+    if do_log: logger_graph.info('sigma',sigma)
 
 
     for t in range(T):
@@ -299,15 +300,16 @@ def graph_bbvi_algo12(graph,T,L,verteces_topsorted=None,do_log=False,**kwargs):
             union_G_keys.update(set(G_l.keys()))
             G.append(G_l)
             r_t.append(r_t_l)
-            #print('l {}, sigma {}'.format(l,sigma))
-        #print('sigma',sigma)
+            if do_log: logger_graph.info('t {}, l {}, sigma {}, local_env {}'.format(t, l,sigma,local_env))
+
+        if do_log: logger_graph.info('sigma',sigma)
         g_hat = elbo_gradients(G,logW[t],union_G_keys) 
-        #print('g_hat',g_hat)
+        if do_log: logger_graph.info('g_hat',g_hat)
         Q = sigma['Q']
-        #print('Q before step',Q)
+        if do_log: logger_graph.info('Q before step',Q)
         global_optimizers = sigma['global_optimizers']
         Q = optimizer_step(Q,global_optimizers,g_hat,**kwargs) # in place modification of Q
-        if t % (T // 10) == 0:
+        if T <= 10 or t % (T // 10) == 0:
             print('t={}, Q after step={}'.format(t,Q))
 
         r.append(r_t)
