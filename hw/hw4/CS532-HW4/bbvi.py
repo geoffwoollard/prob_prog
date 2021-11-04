@@ -292,6 +292,9 @@ def eval_algo11(e,sigma,local_env={},defn_d={},do_log=False,logger_string='',ver
 
 
 def evaluate_link_function_algo11(P,verteces_topsorted,sigma,local_env,do_log):
+    """
+    evaluates all linking functions in P, using ancestral sampling
+    """
     for vertex in verteces_topsorted:
         link_function = P[vertex]
         if link_function[0] == 'sample*':
@@ -424,7 +427,7 @@ def bbvi_algo12(graph,T,L,do_log=False,**kwargs):
         for l in range(L):
             sigma={'logW':tensor(0.),'Q':sigma['Q'],'G':{}}
             # loop through vertex and evaluate linker functions as e
-            r_t_l, sigma = eval_algo11(e,sigma=sigma,local_env = sampled_graph, vertex='sample2',do_log=do_log)
+            r_t_l, sigma = graph_eval_algo11(e,sigma=sigma,local_env = sampled_graph, vertex='sample2',do_log=do_log)
             logW[t,l] = sigma['logW'].item()
             G_l = (sigma['G']).copy()
             union_G_keys.update(set(G_l.keys()))
@@ -442,24 +445,9 @@ def bbvi_algo12(graph,T,L,do_log=False,**kwargs):
         r.append(r_t)
     return r, logW
 
-def graph_bbvi_algo12(graph,sigma={},do_log=False,verteces_topsorted=None):
+def graph_eval_algo11(graph,sigma={},do_log=False,verteces_topsorted=None):
     """This function does ancestral sampling starting from the prior.
-    
     And then ancestral sampling from a learned proposal with bbvi
-
-    graph output from `daphne graph -i sugared.daphne`
-    * list of length 3
-      * first entry is defn dict
-        * {"string-defn-function-name":["fn", ["var_1", ..., "var_n"], e_function_body], ...}
-      * second entry is graph: {V,A,P,Y}
-        * "V","A","P","Y" are keys in dict
-        * "V" : ["string_name_vertex_1", ..., "string_name_vertex_n"] # list of string names of vertices
-        * "A" : {"string_name_vertex_1" : [..., "string_name_vertex_i", ...] # dict of arc pairs (u,v) with u a string key in the dict, and the value a list of string names of the vertices. note that the keys can be things like "uniform" and don't have to be vetex name strings
-        * "P" : "string_name_vertex_i" : ["sample*", e_i] # dict. keys vertex name strings and value a rested list with a linking function in it. typically e_i is a distribution object. 
-        * "Y" : observes
-      * third entry is return
-        * name of return rv, or constant
-
     """
     G = graph[1]
     verteces = G['V']
@@ -470,13 +458,22 @@ def graph_bbvi_algo12(graph,sigma={},do_log=False,verteces_topsorted=None):
         assert set(verteces) == set(verteces_topsorted)
     P = G['P']
     Y = G['Y']
-    sampled_graph = {}
-    local_env = {}
     
+    E, sampled_graph = sample_from_joint(graph,do_log=do_log) 
+    # now returns Berens' distributions primitives in sampled_graph['prior_dist']
+    # print('sampled_graph',sampled_graph)
+        
     # initialize once
     d_prior = distributions.Normal(tensor(0.),tensor(1.))
     d_prior = d_prior.make_copy_with_grads()
-    sigma = {'G':{},'logW':tensor(0.),'Q':{'sample2':d_prior}}
+    sigma = {'G':{},'logW':tensor(0.),'Q':{}}
+    for vertex in sampled_graph['prior_dist'].keys():
+        d_prior = sampled_graph['prior_dist'][vertex]
+        d_prior_withgrads = d_prior.make_copy_with_grads() 
+            # only do this once!
+            # no check cases or prior init needed within evaluate_link_function_algo11 etc.
+        sigma['Q'][vertex] = d_prior_withgrads
+    # print('sigma',sigma)
     
     local_env, sigma = evaluate_link_function_algo11(P,verteces_topsorted,sigma,local_env={},do_log=do_log)
 
@@ -484,5 +481,5 @@ def graph_bbvi_algo12(graph,sigma={},do_log=False,verteces_topsorted=None):
     return_of_graph = graph[2] # meaning of program, but need to evaluate
     # if do_log: print('sample_from_joint local_env',local_env)
     # if do_log: print('sample_from_joint sampled_graph',sampled_graph)
-    E, sigma = eval_algo11_deterministic(return_of_graph,sigma, local_env = sampled_graph, do_log=do_log)
-    return E, sampled_graph
+    return_of_graph_E, sigma = eval_algo11_deterministic(return_of_graph,sigma, local_env = sampled_graph, do_log=do_log)
+    return return_of_graph_E, sigma # can return sampled_graph if needed
