@@ -1,5 +1,39 @@
 import torch
 import torch.distributions as dist
+from torch import tensor
+
+
+class UniformContinuous(dist.Gamma):
+    """
+    will use a student t to estimate
+    """
+    def __init__(self, low, high, copy=False):
+        # if not copy:
+        #     # this is the case when you call from evaluate_program
+        #     super().__init__(concentration=torch.FloatTensor(2),
+        #                      rate=high.clone().detach())
+        # else:
+            # this is the case when you go from make_copy_with_grads
+        super().__init__(concentration=low,
+                             rate=high)
+
+    def Parameters(self):
+        """Return a list of parameters for the distribution"""
+        return [self.concentration, self.rate]
+
+    def make_copy_with_grads(self):
+        """
+        Return a copy  of the distribution, with parameters that require_grad
+        """
+
+        ps = [p.clone().detach().requires_grad_() for p in self.Parameters()]
+
+        return UniformContinuous(*ps, copy=True)
+
+    def log_prob(self, x):
+
+        return super().log_prob(x)
+
 
 class Normal(dist.Normal):
     

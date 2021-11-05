@@ -100,10 +100,18 @@ def evaluate_link_function(P,verteces_topsorted,sigma,local_env,do_log):
             if do_log: logger_graph.info('match case sample*: link_function {}'.format(link_function))
             assert len(link_function) == 2
             e = link_function[1]
-            distribution, sigma = evaluate(e,sigma,local_env = local_env, do_log=do_log)
+
+            # overwrite
+            if vertex in local_env['prior_dist'].keys():
+                distribution = local_env['prior_dist'][vertex]
+            else:
+                distribution, sigma = evaluate(e,sigma,local_env = local_env, do_log=do_log)
             if do_log: logger_graph.info('match case sample*: distribution {}, sigma {}'.format(sigma, distribution))
             E = distribution.sample() # now have concrete value. need to pass it as var to evaluate
+
             update_local_env = {vertex:E}#{vertex:E, vertex+'_dist':distribution}
+            
+
             local_env.update(update_local_env)
             local_env['prior_dist'][vertex] = distribution
         elif link_function[0] == 'observe*':
@@ -120,7 +128,7 @@ def evaluate_link_function(P,verteces_topsorted,sigma,local_env,do_log):
     return local_env, sigma
 
 
-def sample_from_joint(graph,sigma=tensor(0.),do_log=False,verteces_topsorted=None):
+def sample_from_joint(graph,sigma=tensor(0.),local_env={'prior_dist':{}},do_log=False,verteces_topsorted=None):
     """This function does ancestral sampling starting from the prior.
 
     graph output from `daphne graph -i sugared.daphne`
@@ -147,8 +155,7 @@ def sample_from_joint(graph,sigma=tensor(0.),do_log=False,verteces_topsorted=Non
     P = G['P']
     Y = G['Y']
     sampled_graph = {}
-    local_env = {}
-    local_env, sigma = evaluate_link_function(P,verteces_topsorted,sigma,local_env={'prior_dist':{}},do_log=do_log)
+    local_env, sigma = evaluate_link_function(P,verteces_topsorted,sigma,local_env=local_env,do_log=do_log)
 
     sampled_graph = local_env
     return_of_graph = graph[2] # meaning of program, but need to evaluate

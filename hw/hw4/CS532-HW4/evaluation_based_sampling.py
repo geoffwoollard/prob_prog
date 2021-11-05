@@ -19,6 +19,7 @@ from torch import tensor
 from daphne import daphne
 from primitives import primitives_d, distributions_d, number, distribution_types
 
+
 number = (int,float)
 
 logging.basicConfig(format='%(levelname)s:%(message)s')
@@ -100,7 +101,7 @@ def evaluate(e,sigma=0,local_env={},defn_d={},do_log=False,logger_string=''):
             if do_log: logger.info('match case distribution: e {}, sigma {}'.format(e,sigma))
             return e, sigma
         else:
-            assert False, 'case not matched'
+            assert False, 'case not matched {}'.format(e)
     elif e[0] == 'sample':
         if do_log: logger.info('match case sample: e {}, sigma {}'.format(e,sigma))
         distribution, sigma = evaluate(e[1],sigma,local_env,defn_d,do_log=do_log)
@@ -159,7 +160,7 @@ def evaluate(e,sigma=0,local_env={},defn_d={},do_log=False,logger_string=''):
             if do_log: logger.info('do case defn: update to local_env from defn_d {}'.format(local_env_update))
             return evaluate(defn_function_body,sigma,local_env = {**local_env, **local_env_update},defn_d=defn_d,do_log=do_log)
         else:
-            assert False, 'not implemented'
+            assert False, 'not implemented {}'.format(cs)
 
 
-        
+

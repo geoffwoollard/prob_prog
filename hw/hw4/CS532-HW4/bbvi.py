@@ -245,7 +245,7 @@ def elbo_gradients(G,logW,union_G_keys):
                 var_sum_d1 += cov_F_G_j[1,1]
             b_v_d1 = cov_sum_d1 / var_sum_d1
             if np.isnan(b_v_d1):
-                b_v_d1 = 1
+                b_v_d1 = 0 # or put a small number in the demonenator
             g_hat_v_d1 = (F_v - G_v*b_v_d1).mean(0)
             g_hat[v] = g_hat_v_d1
             # print('G_v {}, cov_sum_d1 {}, var_sum_d1 {}, g_hat_v_d1 {}'.format(G_v,cov_sum_d1,var_sum_d1,g_hat_v_d1))
@@ -281,7 +281,7 @@ def optimizer_step(Q,global_optimizers,g_hat,**kwargs):
 
 
 
-def graph_bbvi_algo12(graph,T,L,sigma=None,do_log=False,**kwargs):
+def graph_bbvi_algo12(graph,T,L,sigma=None,init_local_env={},do_log=False,custom_proposals=None,**kwargs):
     """This function does ancestral sampling starting from the prior.
     And then ancestral sampling from a learned proposal with bbvi
     TODO: fails when L=1. shapes? averaging?
@@ -302,7 +302,12 @@ def graph_bbvi_algo12(graph,T,L,sigma=None,do_log=False,**kwargs):
 
     else:
     
-        E, sampled_graph = sample_from_joint(graph,do_log=do_log) 
+        # local_env={}
+        # if custom_proposals is not None:
+        #     for vertex in custom_proposals.keys():
+        #         local_env[vertex] = custom_proposals[vertex]
+
+        E, sampled_graph = sample_from_joint(graph,local_env=init_local_env,do_log=do_log)
         # now returns Berens' distributions primitives in sampled_graph['prior_dist']
         # print('sampled_graph',sampled_graph)
             
@@ -311,19 +316,29 @@ def graph_bbvi_algo12(graph,T,L,sigma=None,do_log=False,**kwargs):
         # d_prior = d_prior.make_copy_with_grads()
         sigma={'logW':tensor(0.),'Q':{},'G':{},'global_optimizers':{}}
         for vertex in sampled_graph['prior_dist'].keys():
-            d_prior = sampled_graph['prior_dist'][vertex]
+            if custom_proposals is not None and vertex in custom_proposals.keys():
+                d_prior = custom_proposals[vertex]
+            elif vertex not in sigma['Q']:
+                d_prior = sampled_graph['prior_dist'][vertex]
+
             d_prior_withgrads = d_prior.make_copy_with_grads() 
                 # only do this once!
                 # no check cases or prior init needed within evaluate_link_function_algo11 etc.
+            
+            if do_log: logger_graph.info('sigma {}'.format(sigma))
+            if do_log: logger_graph.info('custom_proposals {}'.format(custom_proposals))
+
             sigma['Q'][vertex] = d_prior_withgrads
+
 
             # global optimizer
             Q = sigma['Q']
             lambda_v = Q[vertex].Parameters()
             optimizer = torch.optim.Adam(lambda_v, **kwargs)
             sigma['global_optimizers'][vertex] = optimizer
+            
 
-    if do_log: logger_graph.info('sigma',sigma)
+    if do_log: logger_graph.info('sigma {}'.format(sigma))
 
 
     for t in range(T):
@@ -346,9 +361,9 @@ def graph_bbvi_algo12(graph,T,L,sigma=None,do_log=False,**kwargs):
             r_t.append(r_t_l)
             if do_log: logger_graph.info('t {}, l {}, sigma {}, local_env {}'.format(t, l,sigma,local_env))
 
-        if do_log: logger_graph.info('sigma',sigma)
+        if do_log: logger_graph.info('sigma {}'.format(sigma))
         g_hat = elbo_gradients(G,logW[t],union_G_keys) 
-        if do_log: logger_graph.info('g_hat',g_hat)
+        if do_log: logger_graph.info('g_hat {}, union_G_keys {}'.format(g_hat,union_G_keys))
         Q = sigma['Q']
         if do_log: logger_graph.info('Q before step',Q)
         global_optimizers = sigma['global_optimizers']

@@ -175,6 +175,9 @@ def or_primitive(arg1_arg2):
     return two_arg_op_primitive(torch.logical_or,arg1_arg2)  
 
 
+def abs_primitive(arg):
+    return one_arg_op_primitive(torch.abs,arg)
+
 # NB: these functions take a list [c0] or [c0, c1, ..., cn]
 # rely on user to not write something non-sensitcal that will fail (e.g. ["+",1,2,3])
 primitives_d = {
@@ -205,6 +208,7 @@ primitives_d = {
     'mat-repmat': lambda a: a[0].repeat((int(a[1].item()), int(a[2].item()))),
     'and' : and_primitive,
     'or' : or_primitive,
+    'abs' : abs_primitive,
 }
 
 
@@ -221,7 +225,7 @@ def exponential(lam):
 
 
 def uniform(low_hi):
-    return two_arg_op_primitive(torch.distributions.Uniform,low_hi)
+    return two_arg_op_primitive(distributions.UniformContinuous,low_hi)
 
 
 def discrete(prob_vector):
@@ -244,7 +248,7 @@ distributions_d = {
     'normal': normal,
     'beta': beta,
     'exponential': exponential,
-    'uniform': uniform,
+    'uniform-continuous': uniform,
     'discrete': discrete,
     'flip': flip,
     'dirichlet' : dirichlet,
