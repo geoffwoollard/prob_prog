@@ -94,6 +94,7 @@ def sample_from_joint_precompute(graph):
 
 
 def evaluate_link_function(P,verteces_topsorted,sigma,local_env,do_log):
+    if 'prior_dist' not in local_env.keys(): local_env['prior_dist']={}
     for vertex in verteces_topsorted:
         link_function = P[vertex]
         if link_function[0] == 'sample*':
@@ -102,7 +103,7 @@ def evaluate_link_function(P,verteces_topsorted,sigma,local_env,do_log):
             e = link_function[1]
 
             # overwrite
-            if vertex in local_env['prior_dist'].keys():
+            if 'prior_dist' in local_env.keys() and vertex in local_env['prior_dist'].keys():
                 distribution = local_env['prior_dist'][vertex]
             else:
                 distribution, sigma = evaluate(e,sigma,local_env = local_env, do_log=do_log)

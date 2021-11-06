@@ -312,8 +312,6 @@ def graph_bbvi_algo12(graph,T,L,sigma=None,init_local_env={},do_log=False,custom
         # print('sampled_graph',sampled_graph)
             
         # initialize once
-        # d_prior = distributions.Normal(tensor(0.),tensor(1.))
-        # d_prior = d_prior.make_copy_with_grads()
         sigma={'logW':tensor(0.),'Q':{},'G':{},'global_optimizers':{}}
         for vertex in sampled_graph['prior_dist'].keys():
             if custom_proposals is not None and vertex in custom_proposals.keys():
@@ -341,13 +339,23 @@ def graph_bbvi_algo12(graph,T,L,sigma=None,init_local_env={},do_log=False,custom
     if do_log: logger_graph.info('sigma {}'.format(sigma))
 
 
+    logW_best = -np.inf
+    elbo_best = -np.inf
+    sigma['Q_best_t'] = {}
+    rand_str = str(np.random.randint(low=0,high=10000000))
     for t in range(T):
         G = []
         r_t=[]
         union_G_keys = set()
 
         for l in range(L):
-            sigma={'logW':tensor(0.),'Q':sigma['Q'],'G':{},'global_optimizers':sigma['global_optimizers']} # re init gradients
+            sigma={
+                'logW':tensor(0.),
+                'Q':sigma['Q'],
+                'G':{},
+                'global_optimizers':sigma['global_optimizers'],
+                'Q_best_t' : sigma['Q_best_t']
+            } # re init gradients
 
             # graph eval algo 11
             local_env, sigma = evaluate_link_function_algo11(P,verteces_topsorted,sigma,local_env={},do_log=do_log)
@@ -355,7 +363,10 @@ def graph_bbvi_algo12(graph,T,L,sigma=None,init_local_env={},do_log=False,custom
             r_t_l, sigma = eval_algo11_deterministic(return_of_graph,sigma,local_env=sampled_graph,do_log=do_log)
 
             logW[t,l] = sigma['logW'].item()
-            G_l = (sigma['G']).copy()
+            # if logW[t,l] > logW_best:
+            #     logW_best = logW[t,l]
+            #     sigma['Q_best_t_l'] = sigma['Q']
+            G_l = (sigma['G']).copy() # warning for underlying gradients to still tie back to the same objects
             union_G_keys.update(set(G_l.keys()))
             G.append(G_l)
             r_t.append(r_t_l)
@@ -367,10 +378,18 @@ def graph_bbvi_algo12(graph,T,L,sigma=None,init_local_env={},do_log=False,custom
         Q = sigma['Q']
         if do_log: logger_graph.info('Q before step',Q)
         global_optimizers = sigma['global_optimizers']
-        Q = optimizer_step(Q,global_optimizers,g_hat,**kwargs) # in place modification of Q
+        Q = optimizer_step(Q,global_optimizers,g_hat,**kwargs) # in place modification of Q, so Q same as sigma['Q']
         if T <= 10 or t % (T // 10) == 0:
             print('t={}, Q after step={}'.format(t,Q))
 
         r.append(r_t)
+
+        elbo = logW[t].mean()
+        if elbo > elbo_best:
+            elbo_best = elbo
+            sigma['Q_best_t'] = torch.save(sigma['Q'],rand_str+'tmp') # cant use copy or deep copy, so just save and load
+
+    sigma['Q_best_t'] = torch.load(rand_str+'tmp')
+
     return r, logW, sigma
 
