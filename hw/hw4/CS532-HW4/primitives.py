@@ -224,7 +224,7 @@ def exponential(lam):
     return one_arg_op_primitive(torch.distributions.Exponential,lam)
 
 
-def uniform(low_hi):
+def uniform_continuous(low_hi):
     return two_arg_op_primitive(distributions.UniformContinuous,low_hi)
 
 
@@ -248,7 +248,7 @@ distributions_d = {
     'normal': normal,
     'beta': beta,
     'exponential': exponential,
-    'uniform-continuous': uniform,
+    'uniform-continuous': uniform_continuous,
     'discrete': discrete,
     'flip': flip,
     'dirichlet' : dirichlet,
