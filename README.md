@@ -6,4 +6,4 @@ UBC CS532W https://www.cs.ubc.ca/~fwood/CS532W-539W/
 * Masoud Mokhtari https://github.com/MasoudMo/CPSC-532W/blob/master/HW2/evaluation_based_sampling.py
 * Mohamad Amin Mohamadi https://github.com/mohamad-amin/CPSC-532W
 * Dylan Green https://github.com/lone-duck/
-* Kevin Yand and Xiaoxuan Liang https://github.com/keviny2/CPSC532W-HW/
+* Kevin Yand and Xiaoxuan (Sherry) Liang https://github.com/keviny2/CPSC532W-HW/
