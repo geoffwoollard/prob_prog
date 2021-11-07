@@ -5,15 +5,9 @@ from torch import tensor
 
 class UniformContinuous(dist.Gamma):
     """
-    will use a student t to estimate
+    Gamma to approx a posterior distribution with support on the positive real line (not including zero)
     """
     def __init__(self, low, high, copy=False):
-        # if not copy:
-        #     # this is the case when you call from evaluate_program
-        #     super().__init__(concentration=torch.FloatTensor(2),
-        #                      rate=high.clone().detach())
-        # else:
-            # this is the case when you go from make_copy_with_grads
         super().__init__(concentration=low,
                              rate=high)
 
