@@ -1,0 +1,4 @@
+(let [m (sample (normal 0 5))
+      s (sample (uniform-continuous 0.01 (abs m)))]
+  (observe (normal 0 s) 7)
+  s)

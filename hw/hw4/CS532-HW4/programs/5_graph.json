@@ -1,0 +1,6 @@
+[{}, {"V": ["observe3", "sample2", "sample1"], "A": {"sample1": ["sample2"], "sample2": ["observe3"]}, 
+	"P": {
+		"sample1": ["sample*", ["normal", 0, 5]], 
+	"sample2": ["sample*", ["uniform-continuous", 0.01, ["abs", "sample1"]]], 
+"observe3": ["observe*", ["normal", 0, "sample2"], 7]}, 
+"Y": {"observe3": 7}}, "sample2"]
