@@ -141,12 +141,16 @@ def run_deterministic_tests():
         except:
             raise AssertionError('return value {} is not equal to truth {} for exp {}'.format(ret,truth,exp))
         
-    print('FOPPL Tests passed')
+        print('FOPPL test {} passed'.format(i))
     
         
     for i in range(1,13):
 
-        exp = daphne(['desugar-hoppl', '-i', '../../HW5/programs/tests/hoppl-deterministic/test_{}.daphne'.format(i)])
+        # exp = daphne(['desugar-hoppl', '-i', '../../HW5/programs/tests/hoppl-deterministic/test_{}.daphne'.format(i)])
+        # truth = load_truth('programs/tests/hoppl-deterministic/test_{}.truth'.format(i))
+        exp = ast_helper(
+            fname='test_{}.daphne'.format(i),
+            directory='programs/tests/hoppl-deterministic')
         truth = load_truth('programs/tests/hoppl-deterministic/test_{}.truth'.format(i))
         ret = evaluate(exp)
         try:
@@ -154,7 +158,7 @@ def run_deterministic_tests():
         except:
             raise AssertionError('return value {} is not equal to truth {} for exp {}'.format(ret,truth,exp))
         
-        print('Test passed')
+        print('HOPPL test {} passed'.format(i))
         
     print('All deterministic tests passed')
     
