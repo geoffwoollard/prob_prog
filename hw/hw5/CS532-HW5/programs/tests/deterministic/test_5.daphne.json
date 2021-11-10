@@ -1,0 +1,1 @@
+["fn", ["alpha"], ["/", ["push-address", "alpha", "addr0"], 2, ["+", ["push-address", "alpha", "addr1"], 3, ["*", ["push-address", "alpha", "addr2"], 3, 2.7]]]]
