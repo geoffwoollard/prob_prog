@@ -1,9 +1,15 @@
-from old_primitives import penv
-from daphne import daphne
-from tests import is_tol, run_prob_test,load_truth
 from pyrsistent import pmap,plist
 import copy
+import os
 import torch
+import json
+
+from daphne import daphne
+from tests import is_tol, run_prob_test,load_truth
+from primitives import penv
+
+
+
 
 # def standard_env():
 #     "An environment with some Scheme standard procedures."
@@ -125,7 +131,9 @@ def run_deterministic_tests():
     
     for i in range(1,14):
 
-        exp = daphne(['desugar-hoppl', '-i', '../../HW5/programs/tests/deterministic/test_{}.daphne'.format(i)])
+        exp = ast_helper(
+            fname='test_{}.daphne'.format(i),
+            directory='programs/tests/deterministic')
         truth = load_truth('programs/tests/deterministic/test_{}.truth'.format(i))
         ret = evaluate(exp)
         try:
@@ -133,7 +141,8 @@ def run_deterministic_tests():
         except:
             raise AssertionError('return value {} is not equal to truth {} for exp {}'.format(ret,truth,exp))
         
-        print('FOPPL Tests passed')
+    print('FOPPL Tests passed')
+    
         
     for i in range(1,13):
 
@@ -170,6 +179,19 @@ def run_probabilistic_tests():
     print('All probabilistic tests passed')    
 
 
+def ast_helper(fname,directory):
+    sugared_fname = '../prob_prog/hw/hw5/CS532-HW5/{}/{}'.format(directory,fname)
+    desugared_ast_json_fname = '/Users/gw/repos/prob_prog/' + sugared_fname.replace('.daphne','.daphne.json')
+    if os.path.isfile(desugared_ast_json_fname):
+        with open(desugared_ast_json_fname) as f:
+            ast = json.load(f)
+    else:
+        #note: the sugared path that goes into daphne desugar should be with respect to the daphne path!
+        ast = daphne(['desugar-hoppl', '-i', sugared_fname]) 
+
+        with open(desugared_ast_json_fname, 'w') as f:
+            json.dump(ast, f)
+    return ast
 
 if __name__ == '__main__':
     
