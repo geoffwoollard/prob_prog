@@ -1,8 +1,1 @@
-['fn',
- ['alpha'],
- ['+',
-  ['push-address', 'alpha', 'addr0'],
-  7,
-  [['fn', ['alpha', 'x'], ['*', ['push-address', 'alpha', 'addr2'], 'x', 'x']],
-   ['push-address', 'alpha', 'addr1'],
-   8]]]
+["fn", ["alpha"], ["+", ["push-address", "alpha", "addr0"], 7, [["fn", ["alpha", "x"], ["*", ["push-address", "alpha", "addr2"], "x", "x"]], ["push-address", "alpha", "addr1"], 8]]]

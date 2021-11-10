@@ -1,0 +1,1 @@
+["fn", ["alpha"], ["sqrt", ["push-address", "alpha", "addr0"], 2]]

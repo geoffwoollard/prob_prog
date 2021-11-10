@@ -1,7 +1,9 @@
-from primitives import env as penv
+from old_primitives import penv
 from daphne import daphne
 from tests import is_tol, run_prob_test,load_truth
 from pyrsistent import pmap,plist
+import copy
+import torch
 
 # def standard_env():
 #     "An environment with some Scheme standard procedures."
@@ -12,13 +14,14 @@ from pyrsistent import pmap,plist
 
 
 
-# def evaluate(exp, env=None): #TODO: add sigma, or something
+def evaluate(exp, env=None): #TODO: add sigma, or something
 
-#     if env is None:
-#         env = standard_env()
+    if env is None:
+        env = standard_env()
 
-#     #TODO:
-#     return    
+    fn, _ = eval(exp,env,sigma=None)
+    ret, sigma = fn("")
+    return ret
 
 
 class Env():
@@ -64,11 +67,6 @@ class Procedure(object):
         new_env = copy.deepcopy(self.env)
         return eval(self.body, Env(self.parms, args, new_env)) # [0]
 
-penv = {
-    '+': torch.add,
-    '*':torch.mul,
-#     'push-address':push_addr
-}
 
 
 def standard_env():
@@ -84,7 +82,6 @@ def eval(x,env=standard_env(),sigma=None):
         return env.find(x)[x], sigma
     elif not isinstance(x,list):
         return torch.tensor(x),sigma
-
     
     op, param, *args = x
     
@@ -95,6 +92,7 @@ def eval(x,env=standard_env(),sigma=None):
         return '', sigma
     elif op == 'fn':
         print('args',args)
+#         param, body = args
         body = args[0]
         return Procedure(param, body, env), sigma # has eval in it
         # param ['alpha', 'x']
@@ -110,12 +108,12 @@ def eval(x,env=standard_env(),sigma=None):
 
         if isinstance(proc, Procedure): # lambdas, not primitives
             print('in Procedure',proc, vals)
-            r = proc(*vals)
+            r, _ = proc(*vals)
         else:
-            r = proc(*vals[1:]) # primitives
+            r = proc(vals[1:]) # primitives
             print('in primitives',proc, vals)
             
-        return r
+        return r, sigma
 
 
 def get_stream(exp):

@@ -1,0 +1,25 @@
+["fn", 
+	["alpha"], 
+	[
+		["fn", 
+			["alpha", "col"], 
+			[
+				["fn", 
+					["alpha", "f"], 
+					[
+						["fn", ["alpha", "_"], ["f", ["push-address", "alpha", "addr3"], "\"a\""]], 
+							["push-address", "alpha", "addr2"], 
+							["put", ["push-address", "alpha", "addr4"], "col", "\"a\"", 7]
+					]
+				], 
+				["push-address", "alpha", "addr1"], 
+				["fn", 
+					["alpha", "x"], 
+					["get", ["push-address", "alpha", "addr5"], "col", "x"]
+				]
+			]
+		], 
+		["push-address", "alpha", "addr0"], 
+		["hash-map", ["push-address", "alpha", "addr6"], "\"a\"", 1, "\"b\"", 2]
+	]
+]
