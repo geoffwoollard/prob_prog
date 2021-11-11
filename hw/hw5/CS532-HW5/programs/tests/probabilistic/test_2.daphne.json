@@ -1,0 +1,1 @@
+["fn", ["alpha"], ["sample", ["push-address", "alpha", "addr0"], ["beta", ["push-address", "alpha", "addr1"], 2.0, 5.0]]]

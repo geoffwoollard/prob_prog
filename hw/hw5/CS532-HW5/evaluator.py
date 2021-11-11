@@ -199,9 +199,8 @@ def run_probabilistic_tests():
     num_samples=1e4
     max_p_value = 1e-2
     
-    for i in range(1,2):
-        # exp = daphne(['desugar-hoppl', '-i', '../../HW5/programs/tests/probabilistic/test_{}.daphne'.format(i)])
-        # truth = load_truth('programs/tests/probabilistic/test_{}.truth'.format(i))
+    for i in range(2,3):
+
         exp = ast_helper(
             fname='test_{}.daphne'.format(i),
             directory='programs/tests/probabilistic')
