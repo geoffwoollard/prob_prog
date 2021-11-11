@@ -187,11 +187,25 @@ def empty_primitive(args):
 
 
 def cons_primitive(args):
+    """https://bfontaine.net/blog/2014/05/25/how-to-remember-the-difference-between-conj-and-cons-in-clojure/
+    """
     item, vector = args
     if torch.is_tensor(item) and torch.is_tensor(vector):
-        return torch.cat((torch.tensor([item]), vector), dim=0)
+        return torch.cat((torch.tensor(item), vector), dim=0)
     elif isinstance(vector,list):
         return [item] + vector
+    else:
+        assert False, 'not implemented'
+
+
+def conj_primitive(args):
+    """https://bfontaine.net/blog/2014/05/25/how-to-remember-the-difference-between-conj-and-cons-in-clojure/
+    """
+    item, vector = args
+    if torch.is_tensor(item) and torch.is_tensor(vector):
+        return torch.cat((vector,torch.tensor(item)), dim=0)
+    elif isinstance(vector,list):
+        return vector + [item]
     else:
         assert False, 'not implemented'
 
@@ -228,7 +242,8 @@ primitives_d = {
     'or' : or_primitive,
     'abs' : abs_primitive,
     'empty?' : empty_primitive,
-    'cons' : cons_primitive
+    'cons' : cons_primitive,
+    'conj' : conj_primitive
 }
 
 

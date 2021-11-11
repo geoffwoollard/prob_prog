@@ -128,6 +128,7 @@ def eval_hoppl(x,env=standard_env(),sigma=None,do_log=False):
             r, _ = proc(*vals)
             if do_log: print('case Procedure: r', r)
         else:
+            if do_log: print('case primitives: vals[1:]', vals[1:])
             r = proc(vals[1:]) # primitives
             if do_log: print('case primitives: r', r)
             
