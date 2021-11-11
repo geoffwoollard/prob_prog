@@ -197,11 +197,10 @@ def cons_primitive(args):
     else:
         assert False, 'not implemented'
 
-
-def conj_primitive(args):
+def conj_problem12_primitive(args):
     """https://bfontaine.net/blog/2014/05/25/how-to-remember-the-difference-between-conj-and-cons-in-clojure/
     """
-    item, vector = args
+    item, vector  = args
     if torch.is_tensor(item) and torch.is_tensor(vector):
         return torch.cat((vector,torch.tensor(item)), dim=0)
     elif isinstance(vector,list):
@@ -209,10 +208,27 @@ def conj_primitive(args):
     else:
         assert False, 'not implemented'
 
+def conj_primitive(args):
+    """https://bfontaine.net/blog/2014/05/25/how-to-remember-the-difference-between-conj-and-cons-in-clojure/
+    """
+    vector, item  = args
+    if torch.is_tensor(item) and torch.is_tensor(vector):
+        assert item.dim() == 0
+        return torch.cat((vector,item.reshape(1,)), dim=0)
+    elif isinstance(vector,list):
+        return vector + [item]
+    else:
+        assert False, 'not implemented'
 
 
 def log_primitive(arg):
     return one_arg_op_primitive(torch.log,arg) 
+
+
+def peek_primitive(vector):
+    vector = vector[0]
+    # TODO: assert only defined for vectors
+    return vector[0]
 
 
 # NB: these functions take a list [c0] or [c0, c1, ..., cn]
@@ -250,6 +266,8 @@ primitives_d = {
     'cons' : cons_primitive,
     'conj' : conj_primitive,
     'log' : log_primitive,
+    'peek' : peek_primitive,
+    'conj_problem12' : conj_problem12_primitive,
 }
 
 
