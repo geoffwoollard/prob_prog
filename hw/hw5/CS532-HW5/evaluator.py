@@ -87,19 +87,10 @@ def eval_hoppl(x,env=standard_env(),sigma=None,do_log=False):
 
     # base cases
     if do_log: print('x',x)
-    if isinstance(x[0],str):
+    if isinstance(x,str):
         return env.find(x)[x], sigma
-    elif isinstance(x[0],number):
+    elif not isinstance(x,list):
         return torch.tensor(x),sigma
-    # # elif isinstance(x[0],list):
-    # #     return x[0], sigma
-    # elif torch.is_tensor(x):
-    #     return x, sigma
-    # elif isinstance(x,list) and len(x) == 1:
-    #     return x[0], sigma
-    # elif
-    # else:
-    #     assert False, 'not implemented'
 
     op, param, *args = x
     if 'op' == 'hash-map': assert False, 'bug'
@@ -130,13 +121,14 @@ def eval_hoppl(x,env=standard_env(),sigma=None,do_log=False):
         if do_log: print('case else: args',args)
         vals.extend([eval_hoppl(arg, env, sigma)[0] for arg in args])
         if do_log: print('case else: vals',vals)
+        if do_log: print('case Procedure:', proc, vals)
 
         if isinstance(proc, Procedure): # lambdas, not primitives
-            if do_log: print('case Procedure:', proc, vals)
             r, _ = proc(*vals)
+            if do_log: print('case Procedure: r', r)
         else:
             r = proc(vals[1:]) # primitives
-            if do_log: print('case primitives:', proc, vals)
+            if do_log: print('case primitives: r', r)
             
         return r, sigma
 

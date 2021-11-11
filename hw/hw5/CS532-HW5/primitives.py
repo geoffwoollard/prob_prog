@@ -177,6 +177,18 @@ def or_primitive(arg1_arg2):
 def abs_primitive(arg):
     return one_arg_op_primitive(torch.abs,arg)
 
+def empty_primitive(args):
+    if torch.is_tensor(args):
+        return len(args) == 0
+    elif isinstance(args,list):
+        if torch.is_tensor(args[0]):
+            return len(args) == 0
+        else:
+            assert False, 'length for list happening like you want? args {}'.format(args)
+
+    else:
+        assert False, 'length for non list or non tensor not implemented'
+
 # NB: these functions take a list [c0] or [c0, c1, ..., cn]
 # rely on user to not write something non-sensitcal that will fail (e.g. ["+",1,2,3])
 primitives_d = {
@@ -208,6 +220,7 @@ primitives_d = {
     'and' : and_primitive,
     'or' : or_primitive,
     'abs' : abs_primitive,
+    'empty?' : empty_primitive,
 }
 
 
