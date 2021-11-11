@@ -72,7 +72,8 @@ class Procedure(object):
         self.parms, self.body, self.env = parms, body, env
     def __call__(self, *args): 
         new_env = copy.deepcopy(self.env)
-        return eval_hoppl(self.body, Env(self.parms, args, new_env)) # [0]
+        # do_log = kwargs['do_log']
+        return eval_hoppl(self.body, Env(self.parms, args, new_env),do_log=True) # [0]
 
 
 
