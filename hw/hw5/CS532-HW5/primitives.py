@@ -178,8 +178,9 @@ def abs_primitive(arg):
     return one_arg_op_primitive(torch.abs,arg)
 
 def empty_primitive(args):
-    if torch.is_tensor(args) or isinstance(args,list):
-        return len(args) == 0
+    vector = args[0]
+    if torch.is_tensor(vector) or isinstance(vector,list):
+        return len(vector) == 0
 
     else:
         assert False, 'length for non list or non tensor not implemented'
