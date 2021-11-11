@@ -1,0 +1,1 @@
+["fn", ["alpha"], ["empty?", ["push-address", "alpha", "addr0"], ["vector", ["push-address", "alpha", "addr1"]]]]

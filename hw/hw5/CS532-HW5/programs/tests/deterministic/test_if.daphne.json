@@ -1,0 +1,1 @@
+["fn", ["alpha"], ["if", ["<", ["push-address", "alpha", "addr0"], 1, 0], 1, 0]]
