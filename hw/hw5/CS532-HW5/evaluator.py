@@ -99,9 +99,9 @@ def eval_hoppl(x,env=standard_env(),sigma=None,do_log=False):
         assert len(x) == 4
         test, conseq, alt = x[1:4]
         if do_log: print('case if: x',x)
-        exp = (conseq if eval_hoppl(test, env, sigma)[0] else alt) # be careful to get return in [0] and not sigma!!!
+        exp = (conseq if eval_hoppl(test, env, sigma,do_log=do_log)[0] else alt) # be careful to get return in [0] and not sigma!!!
         if do_log: print('case if: exp',exp)
-        return eval_hoppl(exp, env, sigma)
+        return eval_hoppl(exp, env, sigma,do_log=do_log)
 
     elif op == 'push-address':
         return '', sigma
@@ -116,10 +116,10 @@ def eval_hoppl(x,env=standard_env(),sigma=None,do_log=False):
     
     else:
         if do_log: print('case else: x',x)
-        proc, _ = eval_hoppl(op, env, sigma)
+        proc, _ = eval_hoppl(op, env, sigma,do_log=do_log)
         vals = ['']
         if do_log: print('case else: args',args)
-        vals.extend([eval_hoppl(arg, env, sigma)[0] for arg in args])
+        vals.extend([eval_hoppl(arg, env, sigma,do_log=do_log)[0] for arg in args])
         if do_log: print('case else: vals',vals)
         if do_log: print('case Procedure:', proc, vals)
 
