@@ -197,12 +197,18 @@ def cons_primitive(args):
     else:
         assert False, 'not implemented'
 
-def conj_problem12_primitive(args):
+def prepend_primitive(args):
     """https://bfontaine.net/blog/2014/05/25/how-to-remember-the-difference-between-conj-and-cons-in-clojure/
     """
-    item, vector  = args
+    vector, item  = args
     if torch.is_tensor(item) and torch.is_tensor(vector):
-        return torch.cat((vector,torch.tensor(item)), dim=0)
+        if item.dim() == 0:
+            item = item.reshape(1,)
+        elif item.dim() == 1:
+            pass
+        else:
+            assert False, 'not implemented'
+        return torch.cat((item,vector), dim=0)
     elif isinstance(vector,list):
         return vector + [item]
     else:
@@ -267,7 +273,7 @@ primitives_d = {
     'conj' : conj_primitive,
     'log' : log_primitive,
     'peek' : peek_primitive,
-    'conj_problem12' : conj_problem12_primitive,
+    'prepend' : prepend_primitive,
 }
 
 

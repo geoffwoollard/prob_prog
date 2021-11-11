@@ -2,5 +2,5 @@
 (defn map [f values]
    (if (empty? values)
        []
-       (conj_problem12 (map f (rest values)) (f (first values)))))
+       (prepend (map f (rest values)) (f (first values)))))
 (map (fn [y] (+ 1 y)) [1 2 3])
