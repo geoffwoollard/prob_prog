@@ -6,7 +6,7 @@ import json
 
 from daphne import daphne
 from tests import is_tol, run_prob_test,load_truth
-from primitives import penv
+from primitives import penv, number
 
 
 
@@ -85,12 +85,22 @@ def standard_env():
 def eval_hoppl(x,env=standard_env(),sigma=None,do_log=False):
     # TODO: remove default env=standard_env()
 
+    # base cases
     if do_log: print('x',x)
-    if isinstance(x,str):
+    if isinstance(x[0],str):
         return env.find(x)[x], sigma
-    elif not isinstance(x,list):
+    elif isinstance(x[0],number):
         return torch.tensor(x),sigma
-    
+    # # elif isinstance(x[0],list):
+    # #     return x[0], sigma
+    # elif torch.is_tensor(x):
+    #     return x, sigma
+    # elif isinstance(x,list) and len(x) == 1:
+    #     return x[0], sigma
+    # elif
+    # else:
+    #     assert False, 'not implemented'
+
     op, param, *args = x
     if 'op' == 'hash-map': assert False, 'bug'
     
@@ -117,8 +127,9 @@ def eval_hoppl(x,env=standard_env(),sigma=None,do_log=False):
         if do_log: print('case else: x',x)
         proc, _ = eval_hoppl(op, env, sigma)
         vals = ['']
+        if do_log: print('case else: args',args)
         vals.extend([eval_hoppl(arg, env, sigma)[0] for arg in args])
-        if do_log: print('vals',vals)
+        if do_log: print('case else: vals',vals)
 
         if isinstance(proc, Procedure): # lambdas, not primitives
             if do_log: print('case Procedure:', proc, vals)
