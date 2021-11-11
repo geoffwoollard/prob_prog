@@ -20,13 +20,14 @@ from primitives import penv
 
 
 
-def evaluate(exp, env=None): #TODO: add sigma, or something
+def evaluate(exp, env=None,do_log=False): #TODO: add sigma, or something
 
     if env is None:
         env = standard_env()
 
-    fn, _ = eval(exp,env,sigma=None)
+    fn, _ = eval_hoppl(exp,env,sigma=None)
     ret, sigma = fn("")
+    if do_log: print('return',ret)
     return ret
 
 
@@ -71,7 +72,7 @@ class Procedure(object):
         self.parms, self.body, self.env = parms, body, env
     def __call__(self, *args): 
         new_env = copy.deepcopy(self.env)
-        return eval(self.body, Env(self.parms, args, new_env)) # [0]
+        return eval_hoppl(self.body, Env(self.parms, args, new_env)) # [0]
 
 
 
@@ -81,9 +82,10 @@ def standard_env():
     return env
 
 
-def eval(x,env=standard_env(),sigma=None):
+def eval_hoppl(x,env=standard_env(),sigma=None,do_log=False):
+    # TODO: remove default env=standard_env()
 
-    print('x',x)
+    if do_log: print('x',x)
     if isinstance(x,str):
         return env.find(x)[x], sigma
     elif not isinstance(x,list):
@@ -91,13 +93,18 @@ def eval(x,env=standard_env(),sigma=None):
     
     op, param, *args = x
     
-    if False:
-        pass
-    
+    if op == 'if':
+        assert len(x) == 4
+        test, conseq, alt = x[1:4]
+        if do_log: print('case if: x',x)
+        exp = (conseq if eval_hoppl(test, env, sigma)[0] else alt)
+        if do_log: print('case if: exp',exp)
+        return eval(exp, env, sigma)
+
     elif op == 'push-address':
         return '', sigma
     elif op == 'fn':
-        print('args',args)
+        if do_log: print('case fn: args',args)
 #         param, body = args
         body = args[0]
         return Procedure(param, body, env), sigma # has eval in it
@@ -106,18 +113,18 @@ def eval(x,env=standard_env(),sigma=None):
         # env
     
     else:
-        print('in else. x',x)
-        proc, _ = eval(op,env,sigma)
+        if do_log: print('case else: x',x)
+        proc, _ = eval_hoppl(op, env, sigma)
         vals = ['']
-        vals.extend([eval(arg, env, sigma)[0] for arg in args])
-        print('vals',vals)
+        vals.extend([eval_hoppl(arg, env, sigma)[0] for arg in args])
+        if do_log: print('vals',vals)
 
         if isinstance(proc, Procedure): # lambdas, not primitives
-            print('in Procedure',proc, vals)
+            if do_log: print('case Procedure:', proc, vals)
             r, _ = proc(*vals)
         else:
             r = proc(vals[1:]) # primitives
-            print('in primitives',proc, vals)
+            if do_log: print('case primitives:', proc, vals)
             
         return r, sigma
 
