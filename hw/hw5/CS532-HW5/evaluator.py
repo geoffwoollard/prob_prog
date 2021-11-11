@@ -68,12 +68,12 @@ class Env():
 
 class Procedure(object):
     "A user-defined Scheme procedure."
-    def __init__(self, parms, body, env):
+    def __init__(self, parms, body, env,do_log):
         self.parms, self.body, self.env = parms, body, env
+        self.do_log = do_log
     def __call__(self, *args): 
         new_env = copy.deepcopy(self.env)
-        # do_log = kwargs['do_log']
-        return eval_hoppl(self.body, Env(self.parms, args, new_env),do_log=True) # [0]
+        return eval_hoppl(self.body, Env(self.parms, args, new_env),do_log=self.do_log) # [0]
 
 
 
@@ -110,7 +110,7 @@ def eval_hoppl(x,env=standard_env(),sigma=None,do_log=False):
         if do_log: print('case fn: args',args)
 #         param, body = args
         body = args[0]
-        return Procedure(param, body, env), sigma # has eval in it
+        return Procedure(param, body, env, do_log=do_log), sigma # has eval in it
         # param ['alpha', 'x']
         # body ['*', ['push-address', 'alpha', 'addr2'], 'x', 'x']
         # env
