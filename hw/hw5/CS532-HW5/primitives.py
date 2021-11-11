@@ -210,6 +210,11 @@ def conj_primitive(args):
         assert False, 'not implemented'
 
 
+
+def log_primitive(arg):
+    return one_arg_op_primitive(torch.log,arg) 
+
+
 # NB: these functions take a list [c0] or [c0, c1, ..., cn]
 # rely on user to not write something non-sensitcal that will fail (e.g. ["+",1,2,3])
 primitives_d = {
@@ -243,7 +248,8 @@ primitives_d = {
     'abs' : abs_primitive,
     'empty?' : empty_primitive,
     'cons' : cons_primitive,
-    'conj' : conj_primitive
+    'conj' : conj_primitive,
+    'log' : log_primitive,
 }
 
 

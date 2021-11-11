@@ -113,6 +113,9 @@ def eval_hoppl(x,env=standard_env(),sigma=None,do_log=False):
         if do_log: print('case sample: evaluated_sample',evaluated_sample)
         return evaluated_sample, sigma
 
+    elif op == 'observe':
+        if do_log: print('case observe: (pass)')
+        return 'observed', sigma
     elif op == 'push-address':
         return '', sigma
     elif op == 'fn':
