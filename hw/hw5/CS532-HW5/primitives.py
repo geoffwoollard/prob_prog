@@ -185,6 +185,17 @@ def empty_primitive(args):
     else:
         assert False, 'length for non list or non tensor not implemented'
 
+
+def cons_primitive(args):
+    item, vector = args
+    if torch.is_tensor(item) and torch.is_tensor(vector):
+        return torch.cat((torch.tensor([item]), vector), dim=0)
+    elif isinstance(vector,list):
+        return [item] + vector
+    else:
+        assert False, 'not implemented'
+
+
 # NB: these functions take a list [c0] or [c0, c1, ..., cn]
 # rely on user to not write something non-sensitcal that will fail (e.g. ["+",1,2,3])
 primitives_d = {
@@ -217,6 +228,7 @@ primitives_d = {
     'or' : or_primitive,
     'abs' : abs_primitive,
     'empty?' : empty_primitive,
+    'cons' : cons_primitive
 }
 
 

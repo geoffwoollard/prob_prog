@@ -1,0 +1,1 @@
+["fn", ["alpha"], ["cons", ["push-address", "alpha", "addr0"], 1, ["vector", ["push-address", "alpha", "addr1"], 2, 3, 4]]]
