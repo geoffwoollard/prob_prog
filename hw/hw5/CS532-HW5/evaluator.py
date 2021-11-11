@@ -25,7 +25,7 @@ def evaluate(exp, env=None,do_log=False): #TODO: add sigma, or something
     if env is None:
         env = standard_env()
 
-    fn, _ = eval_hoppl(exp,env,sigma=None)
+    fn, _ = eval_hoppl(exp,env,sigma=None, do_log=do_log)
     ret, sigma = fn("")
     if do_log: print('return',ret)
     return ret
@@ -92,14 +92,15 @@ def eval_hoppl(x,env=standard_env(),sigma=None,do_log=False):
         return torch.tensor(x),sigma
     
     op, param, *args = x
+    if 'op' == 'hash-map': assert False, 'bug'
     
     if op == 'if':
         assert len(x) == 4
         test, conseq, alt = x[1:4]
         if do_log: print('case if: x',x)
-        exp = (conseq if eval_hoppl(test, env, sigma)[0] else alt)
+        exp = (conseq if eval_hoppl(test, env, sigma)[0] else alt) # be careful to get return in [0] and not sigma!!!
         if do_log: print('case if: exp',exp)
-        return eval(exp, env, sigma)
+        return eval_hoppl(exp, env, sigma)
 
     elif op == 'push-address':
         return '', sigma
