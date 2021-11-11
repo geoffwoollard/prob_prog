@@ -1,0 +1,1 @@
+["fn", ["alpha"], [["fn", ["alpha", "a"], ["sample", ["push-address", "alpha", "addr1"], ["normal", ["push-address", "alpha", "addr2"], ["get", ["push-address", "alpha", "addr3"], "a", 6.0], ["get", ["push-address", "alpha", "addr4"], "a", 1.0]]]], ["push-address", "alpha", "addr0"], ["hash-map", ["push-address", "alpha", "addr5"], 6.0, 5.3, 1.0, 3.2]]]

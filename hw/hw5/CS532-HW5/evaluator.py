@@ -199,7 +199,7 @@ def run_probabilistic_tests():
     num_samples=1e4
     max_p_value = 1e-2
     
-    for i in range(2,3):
+    for i in range(1,7):
 
         exp = ast_helper(
             fname='test_{}.daphne'.format(i),
