@@ -6,6 +6,8 @@ http://doi.org/10.1561/XXXXXXXXXX
 Acknowledgements to Yuan T https://github.com/yuant95/CPSC532W/blob/master/CS532-HW2/primitives.py
 and 
 Masoud Mokhtari https://github.com/MasoudMo/CPSC-532W/blob/master/HW2/primitives.py
+and
+HW6 starter code https://www.cs.ubc.ca/~fwood/CS532W-539W/homework/6.html
 """
 
 import torch
@@ -171,13 +173,6 @@ def vector_primitive(vector):
         return torch.tensor(ret)
     except:
         return ret
-
-def conj_primitive(args):
-    # TODO: write test
-    base = args[0]
-    rest = args[1:]
-    for i in rest:
-        base = torch.cat(base, i)
 
             
 def append_primitive(vector_element):

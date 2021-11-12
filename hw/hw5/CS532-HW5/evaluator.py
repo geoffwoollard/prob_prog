@@ -1,4 +1,10 @@
-from pyrsistent import pmap,plist
+"""
+HOPPL evaluator
+Acknowledgments to Jordan Lovrod, especially for class Env, and Procedure; 
+    also to the HW6 starter code for some parts of the eval_hoppl, especially the double quotes.
+"""
+
+from pyrsistent import pmap, plist
 import copy
 import os
 import torch
@@ -7,17 +13,6 @@ import json
 from daphne import daphne
 from tests import is_tol, run_prob_test,load_truth
 from primitives import penv, number
-
-
-
-
-# def standard_env():
-#     "An environment with some Scheme standard procedures."
-#     env = pmap(penv)
-#     env = env.update({'alpha' : ''}) 
-
-#     return env
-
 
 
 def evaluate(exp, env=None,do_log=False): #TODO: add sigma, or something
@@ -66,6 +61,7 @@ class Env():
                 print(outer,'\n')
             outer = outer.outer
 
+
 class Procedure(object):
     "A user-defined Scheme procedure."
     def __init__(self, parms, body, env,do_log):
@@ -73,7 +69,7 @@ class Procedure(object):
         self.do_log = do_log
     def __call__(self, *args): 
         new_env = copy.deepcopy(self.env)
-        return eval_hoppl(self.body, Env(self.parms, args, new_env),do_log=self.do_log) # [0]
+        return eval_hoppl(self.body, Env(self.parms, args, new_env),do_log=self.do_log)
 
 
 
@@ -88,12 +84,8 @@ def eval_hoppl(x,env=standard_env(),sigma=None,do_log=False):
 
     if do_log: print('x',x)
     
-
     if isinstance(x, list):
         op, param, *args = x
-
-        # if op == 'hash-map': assert False, 'bug'
-
 
         if op == 'if':
             assert len(x) == 4
@@ -119,7 +111,6 @@ def eval_hoppl(x,env=standard_env(),sigma=None,do_log=False):
             return '', sigma
         elif op == 'fn':
             if do_log: print('case fn: args',args)
-    #         param, body = args
             body = args[0]
             return Procedure(param, body, env, do_log=do_log), sigma # has eval in it
             # param ['alpha', 'x']
@@ -149,7 +140,7 @@ def eval_hoppl(x,env=standard_env(),sigma=None,do_log=False):
     elif isinstance(x,str):
         if x[0] == "\"":  # daphne output: strings have double, double quotes
             return x[1:-1], sigma
-            
+
         lowest_env = env.find(x)
         return lowest_env[x], sigma
 
@@ -207,7 +198,6 @@ def run_deterministic_tests():
         
         
     print('All deterministic tests passed')
-    
 
 
 def run_probabilistic_tests():
@@ -246,6 +236,7 @@ def ast_helper(fname,directory):
             json.dump(ast, f)
     return ast
 
+
 if __name__ == '__main__':
     
     run_deterministic_tests()
@@ -254,6 +245,9 @@ if __name__ == '__main__':
 
     for i in range(1,4):
         print(i)
-        exp = daphne(['desugar-hoppl', '-i', '../../HW5/programs/{}.daphne'.format(i)])
+        # exp = daphne(['desugar-hoppl', '-i', '../../HW5/programs/{}.daphne'.format(i)])
+        exp = ast_helper(
+            fname='{}.daphne'.format(i),
+            directory='programs')
         print('\n\n\nSample of prior of program {}:'.format(i))
         print(evaluate(exp))        
