@@ -86,65 +86,75 @@ def standard_env():
 def eval_hoppl(x,env=standard_env(),sigma=None,do_log=False):
     # TODO: remove default env=standard_env()
 
-    # base cases
     if do_log: print('x',x)
-    if isinstance(x,str):
-        return env.find(x)[x], sigma
-    elif not isinstance(x,list):
-        return torch.tensor(x),sigma
-
-    op, param, *args = x
-    if 'op' == 'hash-map': assert False, 'bug'
     
-    if op == 'if':
-        assert len(x) == 4
-        test, conseq, alt = x[1:4]
-        if do_log: print('case if: x',x)
-        exp = (conseq if eval_hoppl(test, env, sigma,do_log=do_log)[0] else alt) # be careful to get return in [0] and not sigma!!!
-        if do_log: print('case if: exp',exp)
-        return eval_hoppl(exp, env, sigma,do_log=do_log)
 
-    if op == 'sample':
-        if do_log: print('case sample: x',x)
-        _, address, exp_distribution = x
-        distribution, sigma = eval_hoppl(exp_distribution, env, sigma,do_log=do_log)
-        if do_log: print('case sample: distribution',distribution)
-        evaluated_sample = distribution.sample()
-        if do_log: print('case sample: evaluated_sample',evaluated_sample)
-        return evaluated_sample, sigma
+    if isinstance(x, list):
+        op, param, *args = x
 
-    elif op == 'observe':
-        if do_log: print('case observe: (pass)')
-        return 'observed', sigma
-    elif op == 'push-address':
-        return '', sigma
-    elif op == 'fn':
-        if do_log: print('case fn: args',args)
-#         param, body = args
-        body = args[0]
-        return Procedure(param, body, env, do_log=do_log), sigma # has eval in it
-        # param ['alpha', 'x']
-        # body ['*', ['push-address', 'alpha', 'addr2'], 'x', 'x']
-        # env
-    
-    else:
-        if do_log: print('case else: x',x)
-        proc, _ = eval_hoppl(op, env, sigma,do_log=do_log)
-        vals = ['']
-        if do_log: print('case else: args',args)
-        vals.extend([eval_hoppl(arg, env, sigma,do_log=do_log)[0] for arg in args])
-        if do_log: print('case else: vals',vals)
-        if do_log: print('case Procedure:', proc, vals)
+        if 'op' == 'hash-map': assert False, 'bug'
 
-        if isinstance(proc, Procedure): # lambdas, not primitives
-            r, _ = proc(*vals)
-            if do_log: print('case Procedure: r', r)
+
+        if op == 'if':
+            assert len(x) == 4
+            test, conseq, alt = x[1:4]
+            if do_log: print('case if: x',x)
+            exp = (conseq if eval_hoppl(test, env, sigma,do_log=do_log)[0] else alt) # be careful to get return in [0] and not sigma!!!
+            if do_log: print('case if: exp',exp)
+            return eval_hoppl(exp, env, sigma,do_log=do_log)
+
+        if op == 'sample':
+            if do_log: print('case sample: x',x)
+            _, address, exp_distribution = x
+            distribution, sigma = eval_hoppl(exp_distribution, env, sigma,do_log=do_log)
+            if do_log: print('case sample: distribution',distribution)
+            evaluated_sample = distribution.sample()
+            if do_log: print('case sample: evaluated_sample',evaluated_sample)
+            return evaluated_sample, sigma
+
+        elif op == 'observe':
+            if do_log: print('case observe: (pass)')
+            return 'observed', sigma
+        elif op == 'push-address':
+            return '', sigma
+        elif op == 'fn':
+            if do_log: print('case fn: args',args)
+    #         param, body = args
+            body = args[0]
+            return Procedure(param, body, env, do_log=do_log), sigma # has eval in it
+            # param ['alpha', 'x']
+            # body ['*', ['push-address', 'alpha', 'addr2'], 'x', 'x']
+            # env
+        
         else:
-            if do_log: print('case primitives: vals[1:]', vals[1:])
-            r = proc(vals[1:]) # primitives
-            if do_log: print('case primitives: r', r)
-            
-        return r, sigma
+            if do_log: print('case else: x',x)
+            proc, _ = eval_hoppl(op, env, sigma,do_log=do_log)
+            vals = ['']
+            if do_log: print('case else: args',args)
+            vals.extend([eval_hoppl(arg, env, sigma,do_log=do_log)[0] for arg in args])
+            if do_log: print('case else: vals',vals)
+            if do_log: print('case Procedure:', proc, vals)
+
+            if isinstance(proc, Procedure): # lambdas, not primitives
+                r, _ = proc(*vals)
+                if do_log: print('case Procedure: r', r)
+            else:
+                if do_log: print('case primitives: vals[1:]', vals[1:])
+                r = proc(vals[1:]) # primitives
+                if do_log: print('case primitives: r', r)
+                
+            return r, sigma
+
+    # base cases
+    elif isinstance(x,str):
+        lowest_env = env.find(x)
+        return lowest_env[x], sigma
+
+    elif isinstance(x,(float,int,bool)):
+        return torch.tensor(x), sigma
+
+    else:
+        raise ValueError('unkown expression case')
 
 
 def get_stream(exp):
