@@ -92,7 +92,7 @@ def eval_hoppl(x,env=standard_env(),sigma=None,do_log=False):
     if isinstance(x, list):
         op, param, *args = x
 
-        if 'op' == 'hash-map': assert False, 'bug'
+        # if op == 'hash-map': assert False, 'bug'
 
 
         if op == 'if':
@@ -147,6 +147,9 @@ def eval_hoppl(x,env=standard_env(),sigma=None,do_log=False):
 
     # base cases
     elif isinstance(x,str):
+        if x[0] == "\"":  # daphne output: strings have double, double quotes
+            return x[1:-1], sigma
+            
         lowest_env = env.find(x)
         return lowest_env[x], sigma
 

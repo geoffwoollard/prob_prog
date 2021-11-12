@@ -9,7 +9,7 @@ Masoud Mokhtari https://github.com/MasoudMo/CPSC-532W/blob/master/HW2/primitives
 """
 
 import torch
-import numpy as np
+from torch import tensor
 
 number = (float, int)
 distribution_types = (
@@ -56,13 +56,22 @@ def sqrt_primitive(arg):
 
 def get_primitive(vector_and_index):
     vector, index = vector_and_index
+
+    if isinstance(index,str):
+        index_safe = index
+    elif torch.is_tensor(index):
+        index_safe = index.item()
+    else:
+        assert False,  'index type {} case not implemented'.format(type(index))
+
     if isinstance(vector,dict):
-        return vector[index.item()]
+        return vector[index_safe]
     elif torch.is_tensor(vector):
+        assert not isinstance(index,str)
         return vector[index.long()]
     elif isinstance(vector,list):
-        index_int = int(index)
-        assert np.isclose(index_int,index) # TODO: use native pytorch
+        index_int = tensor(int(index))
+        assert torch.isclose(index_int,index) # TODO: use native pytorch
         return vector[index_int]
     else:
         assert False,  'vector type {} case not implemented'.format(type(vector))
@@ -70,9 +79,18 @@ def get_primitive(vector_and_index):
 
 def put_primitive(vector_index_overwritevalue):
     vector, index, overwritevalue = vector_index_overwritevalue
+
+    if isinstance(index,str):
+        index_safe = index
+    elif torch.is_tensor(index):
+        index_safe = index.item()
+    else:
+        assert False,  'index type {} case not implemented'.format(type(index))
+
     if isinstance(vector,dict):
-        vector[index.item()] = overwritevalue
+        vector[index_safe] = overwritevalue
     elif torch.is_tensor(vector):
+        assert not isinstance(index,str)
         vector[index.long()] = overwritevalue
     else:
         assert False,  'vector type {} case not implemented'.format(type(vector))
@@ -102,8 +120,14 @@ def nth_primitive(vector_nth):
 
 def hash_map_primitive(hash_pairs):
     keys = hash_pairs[::2]
-    # dict keys as tensors problematic. can make but lookup fails on fresh but equivalent tensor (bc memory look up?) 
-    keys = [tensor_key.item() for tensor_key in keys] 
+    for idx, key in enumerate(keys):
+        if torch.is_tensor(key):
+            tensor_key = key
+            keys[idx] = tensor_key.item()     # dict keys as tensors problematic. can make but lookup fails on fresh but equivalent tensor (bc memory look up?) 
+        elif isinstance(key,str):
+            keys[idx] = key # if ley string, just keep as is
+
+    # keys = [tensor_key.item() for tensor_key in keys] 
     vals = hash_pairs[1::2]
     return dict(zip(keys, vals))
 
