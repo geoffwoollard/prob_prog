@@ -127,7 +127,9 @@ def hash_map_primitive(hash_pairs):
             tensor_key = key
             keys[idx] = tensor_key.item()     # dict keys as tensors problematic. can make but lookup fails on fresh but equivalent tensor (bc memory look up?) 
         elif isinstance(key,str):
-            keys[idx] = key # if ley string, just keep as is
+            keys[idx] = key # if key string, just keep as is
+        else:
+            assert False, 'case not implemented for {} {}'.format(keys)
 
     # keys = [tensor_key.item() for tensor_key in keys] 
     vals = hash_pairs[1::2]
