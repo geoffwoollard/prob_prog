@@ -1,0 +1,1 @@
+["fn", ["alpha", "k-return"], ["push-address", "alpha", "addr0", ["fn", ["cps3"], ["push-address", "alpha", "addr1", ["fn", ["cps7"], [["fn", ["alpha", "x", "k4"], ["push-address", "alpha", "addr2", ["fn", ["cps5"], ["*", "cps5", "x", "x", "k4"]]]], "cps7", 8, ["fn", ["cps8"], ["+", "cps3", 7, "cps8", "k-return"]]]]]]]]

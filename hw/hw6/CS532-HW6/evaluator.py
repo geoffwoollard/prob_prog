@@ -133,6 +133,7 @@ def get_stream(exp):
 def run_deterministic_tests(use_cache=True, cache='programs/tests/'):
 
     for i in range(1,15):
+        # continue
         if use_cache:
             with open(cache + 'deterministic/test_{}.json'.format(i),'r') as f:
                 exp = json.load(f)
@@ -149,14 +150,13 @@ def run_deterministic_tests(use_cache=True, cache='programs/tests/'):
         print('Test {} passed'.format(i))
 
     print('FOPPL Tests passed')
-    assert False
 
     for i in range(1,13):
         if use_cache:
             with open(cache + 'hoppl-deterministic/test_{}.json'.format(i),'r') as f:
                 exp = json.load(f)
         else:
-            exp = daphne(['desugar-hoppl-cps', '-i', '../../HW6/programs/tests/hoppl-deterministic/test_{}.daphne'.format(i)])
+            exp = daphne(['desugar-hoppl-cps', '-i', '../prob_prog/hw/hw6/CS532-HW6/programs/tests/hoppl-deterministic/test_{}.daphne'.format(i)])
             with open(cache + 'hoppl-deterministic/test_{}.json'.format(i),'w') as f:
                 json.dump(exp, f)
 
