@@ -82,9 +82,14 @@ def evaluate(exp, env=None):
             d = evaluate(args[1], env=env)
             c = evaluate(args[2], env=env)
             k = evaluate(args[3], env=env)
-            sigma = {'type' : 'observe'
+            sigma = {
+            'type' : 'observe',
+            'address':alpha,
+            'distribution':d,
+            'constant':c,
+            }
                      #TODO: put any other stuff you need here
-                     }
+                     
             return k, [c], sigma
         elif op == 'if':
             cond,conseq,alt = args
