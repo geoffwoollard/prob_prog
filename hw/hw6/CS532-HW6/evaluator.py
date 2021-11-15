@@ -74,8 +74,7 @@ def evaluate(exp, env=None):
             s = d.sample()
             k = evaluate(args[2], env=env)
             
-            sigma = 
-            {
+            sigma = {
             'type' : 'sample',
             'address':alpha,
             } #TODO: put any other stuff you need here
@@ -91,7 +90,7 @@ def evaluate(exp, env=None):
             'type' : 'observe',
             'address':alpha,
             'distribution':d,
-            'constant':c,
+            'observed_constant':c,
             } #TODO: put any other stuff you need here
                      
             return k, [c], sigma
