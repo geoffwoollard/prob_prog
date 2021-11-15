@@ -1,0 +1,1 @@
+["fn", ["alpha", "k-return"], ["push-address", "alpha", "addr0", ["fn", ["cps2"], ["push-address", "alpha", "addr1", ["fn", ["cps3"], ["hash-map", "cps3", 6.0, 5.3, 1.0, 3.2, ["fn", ["cps4"], ["put", "cps2", "cps4", 6.0, 2.0, "k-return"]]]]]]]]

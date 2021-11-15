@@ -137,7 +137,7 @@ def run_deterministic_tests(use_cache=True, cache='programs/tests/'):
             with open(cache + 'deterministic/test_{}.json'.format(i),'r') as f:
                 exp = json.load(f)
         else:
-            exp = daphne(['desugar-hoppl-cps', '-i', '../../HW6/programs/tests/deterministic/test_{}.daphne'.format(i)])
+            exp = daphne(['desugar-hoppl-cps', '-i', '../prob_prog/hw/hw6/CS532-HW6/programs/tests/deterministic/test_{}.daphne'.format(i)])
             with open(cache + 'deterministic/test_{}.json'.format(i),'w') as f:
                 json.dump(exp, f)
         truth = load_truth('programs/tests/deterministic/test_{}.truth'.format(i))
@@ -149,6 +149,7 @@ def run_deterministic_tests(use_cache=True, cache='programs/tests/'):
         print('Test {} passed'.format(i))
 
     print('FOPPL Tests passed')
+    assert False
 
     for i in range(1,13):
         if use_cache:
