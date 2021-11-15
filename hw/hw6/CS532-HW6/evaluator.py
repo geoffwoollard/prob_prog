@@ -73,22 +73,26 @@ def evaluate(exp, env=None):
             d = evaluate(args[1], env=env)
             s = d.sample()
             k = evaluate(args[2], env=env)
-            sigma = {'type' : 'sample'
-                     #TODO: put any other stuff you need here
-                     }
+            
+            sigma = 
+            {
+            'type' : 'sample',
+            'address':alpha,
+            } #TODO: put any other stuff you need here
+                     
             return k, [s], sigma
         elif op == 'observe':
             alpha = evaluate(args[0], env=env)
             d = evaluate(args[1], env=env)
             c = evaluate(args[2], env=env)
             k = evaluate(args[3], env=env)
+            
             sigma = {
             'type' : 'observe',
             'address':alpha,
             'distribution':d,
             'constant':c,
-            }
-                     #TODO: put any other stuff you need here
+            } #TODO: put any other stuff you need here
                      
             return k, [c], sigma
         elif op == 'if':
