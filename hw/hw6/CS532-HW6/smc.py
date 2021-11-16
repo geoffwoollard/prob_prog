@@ -31,22 +31,24 @@ def resample_particles(particles, log_weights):
     
 
     # TODO: normalizing log_Z properly?
-    log_Z = torch.logsumexp(log_weights,0) #- torch.log(torch.tensor(log_weights.shape[0],dtype=float)) # second piece normalizes to num_samples, instead of one (1)?
-    log_norm_weights = log_weights - log_Z
-    particle_weights = torch.exp(log_norm_weights).detach().numpy()
-    assert np.isclose(particle_weights.sum(),1)
+    # log_Z = torch.logsumexp(log_weights,0) #- torch.log(torch.tensor(log_weights.shape[0],dtype=float)) # second piece normalizes to num_samples, instead of one (1)?
+    # log_norm_weights = log_weights - log_Z
+    unnormalized_particle_weights = torch.exp(log_weights).detach().numpy()
+    #assert np.isclose(particle_weights.sum(),1)
 
     particle_idxs = np.random.choice(
         a=range(n_particles),
         size=n_particles,
-        p=particle_weights,
+        p=unnormalized_particle_weights/unnormalized_particle_weights.sum(),
         replace=True,
         )
-    print('particle_idxs',particle_idxs)
+    #print('particle_idxs',particle_idxs)
 
     new_particles = []
     for idx in range(n_particles):
         new_particles.append(particles[particle_idxs[idx]]) # TODO: copy?
+
+    log_Z = np.log(np.sum(unnormalized_particle_weights)/n_particles)
     return log_Z, new_particles
 
 
