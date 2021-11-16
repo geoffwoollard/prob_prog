@@ -3,11 +3,6 @@ import torch
 from torch import tensor
 import numpy as np
 import json
-import sys
-
-
-
-
 
 
 def run_until_observe_or_end(res):
@@ -53,7 +48,7 @@ def resample_particles(particles, log_weights):
 
 
 
-def SMC(n_particles, exp):
+def SMC(n_particles, exp,do_log=False):
 
     particles = []
     weights = []
@@ -73,7 +68,7 @@ def SMC(n_particles, exp):
     done = False
     smc_cnter = 0
     while not done:
-        print('In SMC step {}, Zs: '.format(smc_cnter), logZs)
+        if do_log: print('In SMC step {}, Zs: '.format(smc_cnter), logZs)
         for i in range(n_particles): #Even though this can be parallelized, we run it serially
             res = run_until_observe_or_end(particles[i]) # particle i at next breakbpoint
             if 'done' in res[2]: #this checks if the calculation is done
@@ -114,10 +109,10 @@ if __name__ == '__main__':
     for i in range(1,5):
         with open('programs/{}.json'.format(i),'r') as f:
             exp = json.load(f)
-        n_particles = None #TODO 
-        logZ, particles = SMC(n_particles, exp)
+        for n_particles in [1, 10, 100]:
+            logZ, particles = SMC(n_particles, exp)
 
-        print('logZ: ', logZ)
+            print('logZ: ', logZ)
 
         values = torch.stack(particles)
         #TODO: some presentation of the results
