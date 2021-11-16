@@ -1,5 +1,6 @@
 from evaluator import evaluate
 import torch
+from torch import tensor
 import numpy as np
 import json
 import sys
@@ -22,8 +23,31 @@ def run_until_observe_or_end(res):
     return res
 
 def resample_particles(particles, log_weights):
-    #TODO
-    return logZ, new_particles
+    """
+    Eq. 4.24 in course textbook (https://arxiv.org/abs/1809.10756v2, pp. 122)
+    """
+    log_weights = tensor(log_weights)
+    n_particles = log_weights.size().numel()
+    
+
+    # TODO: normalizing log_Z properly?
+    log_Z = torch.logsumexp(log_weights,0) #- torch.log(torch.tensor(log_weights.shape[0],dtype=float)) # second piece normalizes to num_samples, instead of one (1)?
+    log_norm_weights = log_weights - log_Z
+    particle_weights = torch.exp(log_norm_weights).detach().numpy()
+    assert np.isclose(particle_weights.sum(),1)
+
+    particle_idxs = np.random.choice(
+        a=range(n_particles),
+        size=n_particles,
+        p=particle_weights,
+        replace=True,
+        )
+    print('particle_idxs',particle_idxs)
+
+    new_particles = []
+    for idx in range(n_particles):
+        new_particles.append(particles[particle_idxs[idx]]) # TODO: copy?
+    return log_Z, new_particles
 
 
 
@@ -49,17 +73,30 @@ def SMC(n_particles, exp):
     while not done:
         print('In SMC step {}, Zs: '.format(smc_cnter), logZs)
         for i in range(n_particles): #Even though this can be parallelized, we run it serially
-            res = run_until_observe_or_end(particles[i])
+            res = run_until_observe_or_end(particles[i]) # particle i at next breakbpoint
             if 'done' in res[2]: #this checks if the calculation is done
                 particles[i] = res[0]
                 if i == 0:
                     done = True  #and enforces everything to be the same as the first particle
                     address = ''
                 else:
-                    if not done:
+                    if not done: # triggered when i=0 was not done and i>0 was done
                         raise RuntimeError('Failed SMC, finished one calculation before the other')
             else:
-                pass #TODO: check particle addresses, and get weights and continuations
+                #TODO: check particle addresses, and get weights and continuations
+                particles[i] = res
+                cont, args, sigma = res
+                assert 'observe' == sigma['type']
+                weights[i] = sigma['distribution'].log_prob(sigma['observed_constant'])
+
+                 # check particle addresses
+                if i == 0:
+                    break_point_address = sigma['address']
+                else:
+                    if sigma['address'] != break_point_address:
+                        assert False, 'particles at different break points'
+
+
 
         if not done:
             #resample and keep track of logZs
