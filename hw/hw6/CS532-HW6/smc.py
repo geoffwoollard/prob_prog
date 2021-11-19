@@ -1,3 +1,8 @@
+"""
+inspired by https://github.com/MasoudMo/cpsc532w_hw/blob/master/HW6/smc.py
+
+"""
+
 from evaluator import evaluate
 import torch
 from torch import tensor
@@ -17,19 +22,16 @@ def run_until_observe_or_end(res):
     res = (res, None, {'done' : True}) #wrap it back up in a tuple, that has "done" in the sigma map
     return res
 
+
 def resample_particles(particles, log_weights):
     """
     Eq. 4.24 in course textbook (https://arxiv.org/abs/1809.10756v2, pp. 122)
+    See Algorithm 15 in the course textbook, section 6.7 Sequantial Monte Carlo, p. 176
     """
     log_weights = tensor(log_weights)
     n_particles = log_weights.size().numel()
     
-
-    # TODO: normalizing log_Z properly?
-    # log_Z = torch.logsumexp(log_weights,0) #- torch.log(torch.tensor(log_weights.shape[0],dtype=float)) # second piece normalizes to num_samples, instead of one (1)?
-    # log_norm_weights = log_weights - log_Z
     unnormalized_particle_weights = torch.exp(log_weights).detach().numpy()
-    #assert np.isclose(particle_weights.sum(),1)
 
     particle_idxs = np.random.choice(
         a=range(n_particles),
@@ -45,7 +47,6 @@ def resample_particles(particles, log_weights):
 
     log_Z = np.log(np.sum(unnormalized_particle_weights)/n_particles)
     return log_Z, new_particles
-
 
 
 def SMC(n_particles, exp,do_log=False):
@@ -103,16 +104,3 @@ def SMC(n_particles, exp,do_log=False):
     logZ = sum(logZs)
     return logZ, particles
 
-
-if __name__ == '__main__':
-
-    for i in range(1,5):
-        with open('programs/{}.json'.format(i),'r') as f:
-            exp = json.load(f)
-        for n_particles in [1, 10, 100]:
-            logZ, particles = SMC(n_particles, exp)
-
-            print('logZ: ', logZ)
-
-        values = torch.stack(particles)
-        #TODO: some presentation of the results
